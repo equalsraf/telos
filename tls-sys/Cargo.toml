@@ -1,0 +1,12 @@
+[package]
+name = "tls-sys"
+version = "0.1.0"
+authors = ["raf"]
+license = "ISC"
+description = "FFI bindings for libressl's libtls"
+
+build = "src/build.rs"
+
+[dependencies]
+libc = "0.1"
+

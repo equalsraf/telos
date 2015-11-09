@@ -1,0 +1,11 @@
+[package]
+name = "tls"
+version = "0.1.0"
+authors = ["raf"]
+
+[dependencies]
+libc = "0.1"
+
+[dependencies.tls-sys]
+path = "../tls-sys"
+version = "0.1.0"
