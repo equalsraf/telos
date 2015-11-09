@@ -40,7 +40,7 @@ fn test_client() {
     let mut buf = [0u8; 256];
     c.read(&mut buf).unwrap();
     println!("{}", String::from_utf8_lossy(&buf));
-    assert!(buf.starts_with(b"HTTP/1.1 30"));
+    assert!(buf.starts_with(b"HTTP/1.1 "));
 }
 
 #[test]

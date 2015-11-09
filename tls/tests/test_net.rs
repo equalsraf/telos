@@ -13,7 +13,7 @@ fn test_net_stream() {
     s.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
     let mut buf = [0u8; 256];
     s.read(&mut buf).unwrap();
-    assert!(buf.starts_with(b"HTTP/1.1 30"));
+    assert!(buf.starts_with(b"HTTP/1.1 "));
 }
 
 #[test]
