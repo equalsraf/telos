@@ -1,0 +1,13 @@
+--- tls/tls_internal.h  2015-10-15 22:12:24.000000000 +0100
++++ /home/raf/Code/libressl/tls/tls_internal.h  2015-11-05 13:09:53.761224347 +0000
+@@ -24,7 +24,9 @@
+ 
+ #include <openssl/ssl.h>
+ 
+-#define _PATH_SSL_CA_FILE "/etc/ssl/cert.pem"
++#ifndef _PATH_SSL_CA_FILE
++# define _PATH_SSL_CA_FILE "/etc/ssl/cert.pem"
++#endif
+ 
+ #define TLS_CIPHERS_COMPAT     "ALL:!aNULL:!eNULL"
+ #define TLS_CIPHERS_DEFAULT    "TLSv1.2+AEAD+ECDHE:TLSv1.2+AEAD+DHE"
