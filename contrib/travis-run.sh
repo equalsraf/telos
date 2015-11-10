@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ev
 
 export LIBRESSL_PATH=${PWD}/deps/libressl/lib
 
