@@ -13,12 +13,15 @@ extern crate libc;
 use std::ffi::{CStr,CString};
 use libc::{c_char,time_t,c_void,size_t};
 use std::ptr;
-use std::os::unix::io::RawFd;
 use std::error::Error;
 use std::fmt;
 use std::sync::{Once,ONCE_INIT};
 use std::io;
 use std::convert;
+#[cfg(unix)]
+use std::os::unix::io::IntoRawFd;
+#[cfg(windows)]
+use std::os::windows::io::IntoRawSocket;
 
 fn from_cstr(s: *const c_char) -> String {
     unsafe {
@@ -85,11 +88,24 @@ impl TlsContext {
         self.rv_to_result(rv as i64)
     }
 
-    /// Establish a TLS connection over the given socket file descriptor
-    pub fn connect_socket(&mut self, fd: RawFd, servername: &str) -> TlsResult<()> {
+    #[cfg(unix)]
+    /// Establish a TLS connection over the given socket
+    pub fn connect_socket<F: IntoRawFd>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
         let rv = unsafe {
             let servername_c = str_c_ptr(servername);
-            ffi::tls_connect_socket(self.ptr, fd, servername_c)
+            ffi::tls_connect_socket(self.ptr, fd.into_raw_fd(), servername_c)
+        };
+        self.rv_to_result(rv as i64)
+    }
+
+    #[cfg(windows)]
+    /// Establish a TLS connection over the given socket
+    pub fn connect_socket<F: IntoRawSocket>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
+        let rv = unsafe {
+            let servername_c = str_c_ptr(servername);
+            // This cast is not exactly safe
+            // http://stackoverflow.com/questions/1953639/
+            ffi::tls_connect_socket(self.ptr, fd.into_raw_socket() as i32, servername_c)
         };
         self.rv_to_result(rv as i64)
     }
@@ -173,14 +189,14 @@ impl TlsContext {
         let buflen = buf.len() as size_t;
         let bptr = buf.as_mut_ptr() as *mut c_void;
         let rv = unsafe { ffi::tls_read(self.ptr, bptr, buflen) };
-        self.rv_to_result_io(rv)
+        self.rv_to_result_io(rv as i64)
     }
 
     pub fn write(&mut self, buf: &[u8]) -> TlsResult<usize> {
         let buflen = buf.len() as size_t;
         let bptr = buf.as_ptr() as *const c_void;
         let rv = unsafe { ffi::tls_write(self.ptr, bptr, buflen) };
-        self.rv_to_result_io(rv)
+        self.rv_to_result_io(rv as i64)
     }
 
     /// Create new server context
@@ -193,10 +209,23 @@ impl TlsContext {
         }
     }
 
-    /// Start a new client connection over an established socket file descriptor
-    pub fn accept_socket(&mut self, fd: RawFd) -> TlsResult<TlsContext> {
+    #[cfg(unix)]
+    /// Accept a new TLS connection over an existing socket
+    pub fn accept_socket<F: IntoRawFd>(&mut self, fd: F) -> TlsResult<TlsContext> {
         let mut cctx: ffi::Tls = ptr::null_mut();;
-        let rv = unsafe {ffi::tls_accept_socket(self.ptr, &mut cctx, fd)};
+        let rv = unsafe {ffi::tls_accept_socket(self.ptr, &mut cctx, fd.into_raw_fd())};
+        self.rv_to_result(rv as i64)
+            .map(|_| TlsContext { ptr: cctx, cfg: None })
+    }
+
+    #[cfg(windows)]
+    /// Accept a new TLS connection over an existing socket
+    pub fn accept_socket<F: IntoRawSocket>(&mut self, fd: F) -> TlsResult<TlsContext> {
+        let mut cctx: ffi::Tls = ptr::null_mut();;
+        // This cast is not exactly safe
+        // http://stackoverflow.com/questions/1953639/
+        let rv = unsafe {ffi::tls_accept_socket(self.ptr, &mut cctx,
+                                                fd.into_raw_socket() as i32)};
         self.rv_to_result(rv as i64)
             .map(|_| TlsContext { ptr: cctx, cfg: None })
     }

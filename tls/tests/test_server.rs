@@ -2,7 +2,6 @@
 extern crate tls;
 use tls::*;
 use std::net::{TcpStream,TcpListener};
-use std::os::unix::io::IntoRawFd;
 use std::thread;
 use std::io::Read;
 
@@ -21,7 +20,7 @@ fn test_server() {
         cfg.insecure_noverifyname();
         cfg.insecure_noverifycert();
         cli_tls.configure(cfg).unwrap();
-        cli_tls.connect_socket(stream.into_raw_fd(), "").unwrap();
+        cli_tls.connect_socket(stream, "").unwrap();
         cli_tls.handshake().unwrap();
 
         let mut buf = [0u8; 128];
@@ -36,7 +35,7 @@ fn test_server() {
     tls_srv.configure(cfg).unwrap();
 
     let conn = srv.incoming().next().unwrap().unwrap();
-    let mut conn_tls = tls_srv.accept_socket(conn.into_raw_fd()).unwrap();
+    let mut conn_tls = tls_srv.accept_socket(conn).unwrap();
     conn_tls.handshake().unwrap();
     conn_tls.write(b"hello").unwrap();
 

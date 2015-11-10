@@ -4,7 +4,6 @@
 use super::{TlsContext,TlsConfig};
 use std::io;
 use std::io::{Read,Write};
-use std::os::unix::io::IntoRawFd;
 use std::net::TcpStream;
 
 pub struct TlsConnection {
@@ -72,8 +71,7 @@ impl TlsStream {
     /// Create a new TLS stream from an existing TCP stream
     pub fn from_tcp_stream(tcp: TcpStream, servername: &str) -> io::Result<TlsStream> {
         let mut c = try!(TlsStream::new_client());
-        let fd = tcp.into_raw_fd();
-        try!(c.connect_socket(fd, servername)
+        try!(c.connect_socket(tcp, servername)
              .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
         Ok(TlsStream {ctx: c})
     }

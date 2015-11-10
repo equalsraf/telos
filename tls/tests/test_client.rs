@@ -1,7 +1,6 @@
 extern crate tls;
 use tls::*;
 use std::net::TcpStream;
-use std::os::unix::io::IntoRawFd;
 
 #[test]
 fn test_client_defs() {
@@ -64,10 +63,9 @@ fn test_client_servername() {
 #[test]
 fn test_connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
-    let fd = tcp.into_raw_fd();
     
     let mut c = TlsContext::new_client().unwrap();
-    c.connect_socket(fd, "google.com").unwrap();
+    c.connect_socket(tcp, "google.com").unwrap();
     c.handshake().unwrap();
 }
 
