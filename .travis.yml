@@ -11,3 +11,11 @@ script: contrib/travis-run.sh
 cache:
         directories:
                 - deps
+addons:
+        apt:
+                packages:
+                        - cmake
+                        - libcurl4-openssl-dev
+                        - libelf-dev
+                        - libdw-dev
+after_success: contrib/travis-kcov.sh

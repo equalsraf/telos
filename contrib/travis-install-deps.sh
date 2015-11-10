@@ -10,7 +10,7 @@ set -ev
 LIBRESSL=libressl-2.3.1
 DEPS=${PWD}/deps
 
-if [ -d "$DEPS/libressl" ]; then
+if [ -x "$DEPS/bin/openssl" ]; then
 	echo "Skipping instalation of ${LIBRESSL}"
 else
 	wget http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL}.tar.gz
@@ -18,8 +18,25 @@ else
 	tar axf ${LIBRESSL}.tar.gz
 	pushd ${LIBRESSL}
 	patch -p0 < ../contrib/libressl-ca-file.patch
-	./configure --prefix=${DEPS}/libressl
-	make CFLAGS='-fPIC -D_PATH_SSL_CA_FILE=\"/etc/ssl/certs/ca-certificates.crt\"'
+	./configure --prefix=${DEPS}
+	make CFLAGS='-g -fPIC -D_PATH_SSL_CA_FILE=\"/etc/ssl/certs/ca-certificates.crt\"'
 	make install
 	popd
 fi
+
+KCOV_VERSION=29
+if [ -x "$DEPS/bin/kcov" ]; then
+	echo "Skipping instalation of kcov"
+else
+	wget -O kcov.tar.gz https://github.com/SimonKagstrom/kcov/archive/v${KCOV_VERSION}.tar.gz
+	echo "16f5d0ff0a6f8408ae6fe9415616afdd45f515b7 *kcov.tar.gz" | sha1sum -c -
+	tar axf kcov.tar.gz
+	pushd kcov-${KCOV_VERSION}
+	mkdir build
+	pushd build
+	cmake -DCMAKE_INSTALL_PREFIX=${DEPS} ..
+	make install
+	popd
+	popd
+fi
+
