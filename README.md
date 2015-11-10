@@ -18,3 +18,4 @@ To force static linking
     $ export LIBRESSL_LINKAGE=static
 
 [![Travis-CI](https://travis-ci.org/equalsraf/rust-tls.svg?branch=master)](https://travis-ci.org/equalsraf/rust-tls)
+[![Coverage Status](https://coveralls.io/repos/equalsraf/rust-tls/badge.svg?branch=master&service=github)](https://coveralls.io/github/equalsraf/rust-tls?branch=master)
