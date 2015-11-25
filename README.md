@@ -1,5 +1,5 @@
 
-Bindings for libressl's libtls.
+Bindings for libressl's libtls. These bindings require libressl 2.3 (i.e. libtls9)
 
 ## Building
 
@@ -12,6 +12,10 @@ If you are linking against a library in a non standard location you need to over
 
     $ export LIBRESSL_PATH=/opt/libressl/lib
     $ cargo build
+
+Likewise for the tls.h header
+
+    $ export LIBRESSL_INCLUDE=/tmp/libressl/include
 
 To force static linking
 

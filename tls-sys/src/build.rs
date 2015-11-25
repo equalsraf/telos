@@ -1,8 +1,15 @@
+extern crate gcc;
+
 use std::env;
 
 fn main() {
-    // TODO: add api check - build a minimal bit of C that checks the
-    // version/values from tls.h
+    // build a minimal bit of C that checks the version/values from tls.h
+    let mut gcc_cfg = gcc::Config::new();
+    gcc_cfg.file("src/libressl_api_check.c");
+    if let Ok(e_incpath) = env::var("LIBRESSL_INCLUDE") {
+        gcc_cfg.include(&e_incpath);
+    }
+    gcc_cfg.compile("lib_api_check.a");
 
     // LIBRESSL_LINKAGE (dylib, static, framework) is used to specify how
     // to link against libtls (see rustc-link-lib) - default is dylib
