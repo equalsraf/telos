@@ -4,7 +4,7 @@ version = "0.2.0"
 authors = ["raf"]
 
 [dependencies]
-libc = "0.1"
+libc = "0.2"
 
 [dependencies.tls-sys]
 path = "../tls-sys"
