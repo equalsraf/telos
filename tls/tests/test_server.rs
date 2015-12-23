@@ -7,7 +7,7 @@ use std::io::Read;
 
 #[test]
 fn test_server() {
-    init();
+    assert!(init());
 
     let srv = TcpListener::bind("127.0.0.1:0").unwrap();
 

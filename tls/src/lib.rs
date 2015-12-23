@@ -335,11 +335,14 @@ impl convert::From<TlsError> for io::Error {
 pub type TlsResult<T> = Result<T,TlsError>;
 
 /// Initialize libtls - make sure to call this before using the API
-pub fn init() {
-    static INIT: Once = ONCE_INIT;
-    INIT.call_once(|| {
-        unsafe { ffi::tls_init()};
+/// Returns false if libtls failed to initialise.
+pub fn init() -> bool {
+    static mut RET: i32 = -1;
+    static ONCE: Once = ONCE_INIT;
+    ONCE.call_once(|| {
+        unsafe { RET = ffi::tls_init() };
     });
+    unsafe { (RET == 0) }
 }
 
 pub mod net;

@@ -5,7 +5,7 @@ use std::io::{Write,Read};
 
 #[test]
 fn test_net_stream() {
-    init();
+    assert!(init());
 
     let conn = TlsConnection::new().unwrap();
     let mut s = conn.connect("google.com", "443").unwrap();
@@ -18,7 +18,7 @@ fn test_net_stream() {
 
 #[test]
 fn test_net_shutdown_twice() {
-    init();
+    assert!(init());
 
     let conn = TlsConnection::new().unwrap();
     let mut s = conn.connect("google.com", "443").unwrap();
