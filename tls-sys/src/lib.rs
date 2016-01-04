@@ -1,5 +1,5 @@
 extern crate libc;
-use libc::{c_int,c_void,c_char,time_t,ssize_t,size_t,uint8_t};
+use libc::{c_int,c_void,c_char,time_t,ssize_t,size_t,uint8_t,uint32_t};
 
 pub type Tls = *mut c_void;
 pub type Config = *mut c_void;
@@ -23,6 +23,8 @@ extern "C" {
     pub fn tls_config_set_cert_file(cfg: Config, key_file: *const c_char) -> c_int;
     pub fn tls_config_insecure_noverifyname(cfg: Config);
     pub fn tls_config_insecure_noverifycert(cfg: Config);
+    pub fn tls_config_set_protocols(cfg: Config, protocols: uint32_t);
+    pub fn tls_config_parse_protocols(protocols: *mut uint32_t, protocols: *const c_char) -> c_int;
 
     pub fn tls_conn_version(ctx: Tls) -> *const c_char;
     pub fn tls_conn_cipher(ctx: Tls) -> *const c_char;

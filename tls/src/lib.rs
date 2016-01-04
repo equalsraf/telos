@@ -297,6 +297,17 @@ impl TlsConfig {
         };
         if rv == 0 { Some(()) } else { None }
     }
+    pub fn set_protocols(&mut self, protocols: &str) -> Option<()> {
+        let mut proto = 0;
+        unsafe {
+	    let proto_c = CString::from_vec_unchecked(protocols.bytes().collect());
+            if ffi::tls_config_parse_protocols(&mut proto, proto_c.as_ptr()) == -1 {
+                return None;
+            }
+            ffi::tls_config_set_protocols(self.cfg, proto);
+        }
+        Some(())
+    }
 }
 
 impl Drop for TlsConfig {
