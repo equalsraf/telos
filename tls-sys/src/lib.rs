@@ -1,5 +1,5 @@
 extern crate libc;
-use libc::{c_int,c_void,c_char,time_t,ssize_t,size_t};
+use libc::{c_int,c_void,c_char,time_t,ssize_t,size_t,uint8_t};
 
 pub type Tls = *mut c_void;
 pub type Config = *mut c_void;
@@ -17,6 +17,7 @@ extern "C" {
     pub fn tls_config_free(cfg: Config);
     pub fn tls_config_set_ca_file(cfg: Config, ca_file: *const c_char) -> c_int;
     pub fn tls_config_set_ca_path(cfg: Config, ca_file: *const c_char) -> c_int;
+    pub fn tls_config_set_ca_mem(cfg: Config, ca: *const uint8_t, len: size_t) -> c_int;
     pub fn tls_config_set_verify_depth(cfg: Config, depth: c_int);
     pub fn tls_config_set_key_file(cfg: Config, key_file: *const c_char) -> c_int;
     pub fn tls_config_set_cert_file(cfg: Config, key_file: *const c_char) -> c_int;

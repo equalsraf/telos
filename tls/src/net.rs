@@ -39,6 +39,9 @@ impl TlsConnection {
     pub fn set_ca_path(&mut self, path: &str) -> Option<()> {
         self.cfg.set_ca_path(path)
     }
+    pub fn set_ca_mem(&mut self, ca: &str) -> Option<()> {
+        self.cfg.set_ca_mem(ca)
+    }
     pub fn set_verify_depth(&mut self, depth: i32 ) {
         self.cfg.set_verify_depth(depth)
     }

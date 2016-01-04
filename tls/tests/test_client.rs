@@ -62,6 +62,22 @@ fn test_client_servername() {
     c.handshake().unwrap();
 }
 
+/// Similar to test_client_servername, but setups CA
+/// from memory.
+#[test]
+fn test_set_ca_mem() {
+    assert!(init());
+
+    let mut cfg = TlsConfig::new().unwrap();
+    let pem = include_str!("cert.pem");
+    cfg.set_ca_mem(&pem);
+
+    let mut c = TlsContext::new_client().unwrap();
+    c.configure(cfg).unwrap();
+    c.connect_servername("google.com", "443", "").unwrap();
+    c.handshake().unwrap();
+}
+
 #[test]
 fn test_connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();

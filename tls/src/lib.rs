@@ -268,6 +268,12 @@ impl TlsConfig {
         };
         if rv == 0 { Some(()) } else { None }
     }
+    pub fn set_ca_mem(&mut self, ca: &str) -> Option<()> {
+        let rv = unsafe {
+            ffi::tls_config_set_ca_mem(self.cfg, ca.as_ptr(), ca.len())
+        };
+        if rv == 0 { Some(()) } else { None }
+    }
     pub fn set_verify_depth(&mut self, depth: i32 ) {
         unsafe { ffi::tls_config_set_verify_depth(self.cfg, depth) }
     }
