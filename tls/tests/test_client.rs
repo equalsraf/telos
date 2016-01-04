@@ -2,6 +2,8 @@ extern crate tls;
 use tls::*;
 use std::net::TcpStream;
 
+mod common;
+
 #[test]
 fn test_client_defs() {
     assert!(init());
@@ -24,7 +26,7 @@ fn test_client_defs() {
 fn test_client() {
     assert!(init());
 
-    let mut c = TlsContext::new_client().unwrap();
+    let mut c = common::tls_client();
     c.connect_servername("google.com", "443", "").unwrap();
     c.handshake().unwrap();
 
@@ -46,7 +48,7 @@ fn test_client() {
 fn test_connect_noport() {
     assert!(init());
 
-    let mut c = TlsContext::new_client().unwrap();
+    let mut c = common::tls_client();
     c.connect_servername("google.com:443", "", "").unwrap();
     c.handshake().unwrap();
 }
@@ -55,7 +57,7 @@ fn test_connect_noport() {
 fn test_client_servername() {
     assert!(init());
 
-    let mut c = TlsContext::new_client().unwrap();
+    let mut c = common::tls_client();
     c.connect_servername("google.com", "443", "google.com").unwrap();
     c.handshake().unwrap();
 }
@@ -64,7 +66,7 @@ fn test_client_servername() {
 fn test_connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     
-    let mut c = TlsContext::new_client().unwrap();
+    let mut c = common::tls_client();
     c.connect_socket(tcp, "google.com").unwrap();
     c.handshake().unwrap();
 }
@@ -86,7 +88,7 @@ fn test_client_verify_depth() {
 fn test_client_double_handshake() {
     assert!(init());
 
-    let mut c = TlsContext::new_client().unwrap();
+    let mut c = common::tls_client();
     c.connect_servername("google.com", "443", "").unwrap();
     c.handshake().unwrap();
     assert!(c.handshake().is_err());

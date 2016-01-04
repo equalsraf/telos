@@ -7,7 +7,8 @@ use std::io::{Write,Read};
 fn test_net_stream() {
     assert!(init());
 
-    let conn = TlsConnection::new().unwrap();
+    let mut conn = TlsConnection::new().unwrap();
+    conn.set_ca_file("tests/cert.pem");
     let mut s = conn.connect("google.com", "443").unwrap();
 
     s.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
@@ -20,7 +21,8 @@ fn test_net_stream() {
 fn test_net_shutdown_twice() {
     assert!(init());
 
-    let conn = TlsConnection::new().unwrap();
+    let mut conn = TlsConnection::new().unwrap();
+    conn.set_ca_file("tests/cert.pem");
     let mut s = conn.connect("google.com", "443").unwrap();
 
     s.shutdown().unwrap();
