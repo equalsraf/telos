@@ -25,6 +25,7 @@ extern "C" {
     pub fn tls_config_insecure_noverifycert(cfg: Config);
     pub fn tls_config_set_protocols(cfg: Config, protocols: uint32_t);
     pub fn tls_config_parse_protocols(protocols: *mut uint32_t, protocols: *const c_char) -> c_int;
+    pub fn tls_config_set_ciphers(cfg: Config, ciphers: *const c_char) -> c_int;
 
     pub fn tls_conn_version(ctx: Tls) -> *const c_char;
     pub fn tls_conn_cipher(ctx: Tls) -> *const c_char;

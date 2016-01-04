@@ -308,6 +308,13 @@ impl TlsConfig {
         }
         Some(())
     }
+    pub fn set_ciphers(&mut self, ciphers: &str) -> Option<()> {
+        let rv = unsafe {
+	    let ciphers_c = CString::from_vec_unchecked(ciphers.bytes().collect());
+            ffi::tls_config_set_ciphers(self.cfg, ciphers_c.as_ptr())
+        };
+        if rv == 0 { Some(()) } else { None }
+    }
 }
 
 impl Drop for TlsConfig {
