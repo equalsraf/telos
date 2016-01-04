@@ -23,6 +23,8 @@ use std::os::unix::io::IntoRawFd;
 #[cfg(windows)]
 use std::os::windows::io::IntoRawSocket;
 
+mod util;
+
 fn from_cstr(s: *const c_char) -> String {
     unsafe {
         if s == ptr::null_mut() {
@@ -340,6 +342,7 @@ pub fn init() -> bool {
     static mut RET: i32 = -1;
     static ONCE: Once = ONCE_INIT;
     ONCE.call_once(|| {
+        util::other_init();
         unsafe { RET = ffi::tls_init() };
     });
     unsafe { (RET == 0) }
