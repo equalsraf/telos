@@ -140,3 +140,57 @@ impl Drop for TlsStream {
         let _ = self.ctx.close();
     }
 }
+
+pub struct TlsListenerBuilder {
+    cfg: TlsConfig,
+}
+
+impl TlsListenerBuilder {
+    pub fn set_key_file(&mut self, path: &str) -> Option<()> {
+        self.cfg.set_key_file(path)
+    }
+    pub fn set_cert_file(&mut self, path: &str) -> Option<()> {
+        self.cfg.set_cert_file(path)
+    }
+    pub fn bind(self) -> io::Result<TlsListener> {
+        let mut srv = try!(TlsListener::new_server());
+        try!(srv.configure(self.cfg));
+        Ok(TlsListener {
+            ctx: srv,
+        })
+    }
+}
+
+pub struct TlsListener {
+    ctx: TlsContext,
+}
+
+impl TlsListener {
+
+    fn new_server() -> io::Result<TlsContext> {
+        TlsContext::new_server()
+            .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to create new TLS context"))
+    }
+
+    pub fn new() -> Option<TlsListenerBuilder> {
+        if let Some(cfg) = TlsConfig::new() {
+            Some(TlsListenerBuilder { cfg: cfg })
+        } else {
+            None
+        }
+    }
+
+    pub fn accept(&mut self, tcp: TcpStream) -> io::Result<TlsStream> {
+        let mut c = try!(self.ctx.accept_socket(tcp));
+        if let Err(err) = c.handshake() {
+            if err.wants_more() {
+                try!(c.handshake());
+            } else {
+                return Err(io::Error::from(err));
+            }
+        }
+        Ok(TlsStream {
+            ctx: c,
+        })
+    }
+}
