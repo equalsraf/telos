@@ -9,8 +9,8 @@
 extern crate tls_sys as ffi;
 extern crate libc;
 
-use std::ffi::{CStr, CString};
-use libc::{c_char, time_t, c_void, size_t};
+use std::ffi::CString;
+use libc::{time_t, c_void, size_t};
 use std::ptr;
 use std::error::Error;
 use std::fmt;
@@ -23,27 +23,7 @@ use std::os::unix::io::IntoRawFd;
 use std::os::windows::io::IntoRawSocket;
 
 mod util;
-
-fn from_cstr(s: *const c_char) -> String {
-    unsafe {
-        if s == ptr::null_mut() {
-            String::new()
-        } else {
-            let slice = CStr::from_ptr(s);
-            String::from_utf8_lossy(slice.to_bytes()).into_owned()
-        }
-    }
-}
-
-/// Get C string ptr, but use NULL if the string is empty.
-/// Because some C functions treat NULL and "\0" differently
-fn str_c_ptr(s: &str) -> *const i8 {
-    if s.is_empty() {
-        ptr::null()
-    } else {
-        unsafe { CString::from_vec_unchecked(s.bytes().collect()).as_ptr() }
-    }
-}
+use util::{from_cstr, str_c_ptr};
 
 /// A structure that represents all TLS context
 ///
