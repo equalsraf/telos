@@ -1,9 +1,9 @@
 //! Higher level libtls API wrappers to use along with the Rust
 //! standard library
 
-use super::{TlsContext,TlsConfig};
+use super::{TlsContext, TlsConfig};
 use std::io;
-use std::io::{Read,Write};
+use std::io::{Read, Write};
 use std::net::TcpStream;
 
 pub struct TlsConnection {
@@ -27,10 +27,10 @@ impl TlsConnection {
             if err.wants_more() {
                 try!(c.handshake());
             } else {
-                return Err(io::Error::from(err))
+                return Err(io::Error::from(err));
             }
         }
-        Ok(TlsStream {ctx: c})
+        Ok(TlsStream { ctx: c })
     }
 
     pub fn set_ca_file(&mut self, path: &str) -> Option<()> {
@@ -42,7 +42,7 @@ impl TlsConnection {
     pub fn set_ca_mem(&mut self, ca: &str) -> Option<()> {
         self.cfg.set_ca_mem(ca)
     }
-    pub fn set_verify_depth(&mut self, depth: i32 ) {
+    pub fn set_verify_depth(&mut self, depth: i32) {
         self.cfg.set_verify_depth(depth)
     }
 }
@@ -52,11 +52,10 @@ pub struct TlsStream {
 }
 
 impl TlsStream {
-
     /// Convinience method to create TlsContext clients
     fn new_client() -> io::Result<TlsContext> {
         TlsContext::new_client()
-                     .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to create new TLS context"))
+            .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to create new TLS context"))
     }
 
     /// Close the connection
@@ -65,7 +64,7 @@ impl TlsStream {
             if err.wants_more() {
                 try!(self.ctx.close());
             } else {
-                return Err(io::Error::from(err))
+                return Err(io::Error::from(err));
             }
         }
         Ok(())
@@ -75,24 +74,28 @@ impl TlsStream {
     pub fn from_tcp_stream(tcp: TcpStream, servername: &str) -> io::Result<TlsStream> {
         let mut c = try!(TlsStream::new_client());
         try!(c.connect_socket(tcp, servername)
-             .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
-        Ok(TlsStream {ctx: c})
+              .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
+        Ok(TlsStream { ctx: c })
     }
 }
 
 impl Read for TlsStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.ctx.read(buf)
+        self.ctx
+            .read(buf)
             .map_err(|err| io::Error::from(err))
     }
 }
 
 impl Write for TlsStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.ctx.write(buf)
+        self.ctx
+            .write(buf)
             .map_err(|err| io::Error::from(err))
     }
-    fn flush(&mut self) -> io::Result<()> { Ok(()) }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 impl Drop for TlsStream {

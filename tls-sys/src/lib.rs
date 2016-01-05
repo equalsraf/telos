@@ -1,5 +1,5 @@
 extern crate libc;
-use libc::{c_int,c_void,c_char,time_t,ssize_t,size_t,uint8_t,uint32_t};
+use libc::{c_int, c_void, c_char, time_t, ssize_t, size_t, uint8_t, uint32_t};
 
 pub type Tls = *mut c_void;
 pub type Config = *mut c_void;
@@ -40,10 +40,16 @@ extern "C" {
 
     pub fn tls_client() -> Tls;
     pub fn tls_connect(ctx: Tls, hostname: *const c_char, port: *const c_char) -> c_int;
-    pub fn tls_connect_servername(ctx: Tls, hostname: *const c_char, port: *const c_char,
-                                  servername: *const c_char) -> c_int;
-    pub fn tls_connect_fds(ctx: Tls, fd_read: c_int, fd_write: c_int,
-                                servername: *const c_char) -> c_int;
+    pub fn tls_connect_servername(ctx: Tls,
+                                  hostname: *const c_char,
+                                  port: *const c_char,
+                                  servername: *const c_char)
+                                  -> c_int;
+    pub fn tls_connect_fds(ctx: Tls,
+                           fd_read: c_int,
+                           fd_write: c_int,
+                           servername: *const c_char)
+                           -> c_int;
     pub fn tls_connect_socket(ctx: Tls, fd: c_int, servername: *const c_char) -> c_int;
     pub fn tls_handshake(ctx: Tls) -> c_int;
     pub fn tls_read(ctx: Tls, buf: *mut c_void, buflen: size_t) -> ssize_t;
@@ -57,6 +63,7 @@ extern "C" {
 // A minimal test, enough to force a sanity check on the linkage
 #[test]
 fn test_init() {
-    unsafe {tls_init();}
+    unsafe {
+        tls_init();
+    }
 }
-
