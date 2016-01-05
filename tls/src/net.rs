@@ -33,6 +33,23 @@ impl TlsConnection {
         Ok(TlsStream { ctx: c })
     }
 
+    /// Create a new TLS stream from an existing TCP stream
+    pub fn from_tcp_stream(self, tcp: TcpStream, servername: &str) -> io::Result<TlsStream> {
+        let mut c = try!(TlsStream::new_client());
+        try!(c.configure(self.cfg));
+        try!(c.connect_socket(tcp, servername)
+              .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
+        if let Err(err) = c.handshake() {
+            if err.wants_more() {
+                try!(c.handshake());
+            } else {
+                return Err(io::Error::from(err));
+            }
+        }
+        Ok(TlsStream { ctx: c })
+    }
+
+
     pub fn set_ca_file(&mut self, path: &str) -> Option<()> {
         self.cfg.set_ca_file(path)
     }
@@ -80,14 +97,6 @@ impl TlsStream {
             }
         }
         Ok(())
-    }
-
-    /// Create a new TLS stream from an existing TCP stream
-    pub fn from_tcp_stream(tcp: TcpStream, servername: &str) -> io::Result<TlsStream> {
-        let mut c = try!(TlsStream::new_client());
-        try!(c.connect_socket(tcp, servername)
-              .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
-        Ok(TlsStream { ctx: c })
     }
 
     pub fn certificate_issuer(&self) -> String {
