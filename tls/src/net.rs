@@ -45,6 +45,18 @@ impl TlsConnection {
     pub fn set_verify_depth(&mut self, depth: i32) {
         self.cfg.set_verify_depth(depth)
     }
+    pub fn set_protocols(&mut self, protocols: &str) -> Option<()> {
+        self.cfg.set_protocols(protocols)
+    }
+    pub fn set_ciphers(&mut self, ciphers: &str) -> Option<()> {
+        self.cfg.set_ciphers(ciphers)
+    }
+    pub fn insecure_noverifycert(&mut self) {
+        self.cfg.insecure_noverifycert()
+    }
+    pub fn insecure_noverifyname(&mut self) {
+        self.cfg.insecure_noverifyname()
+    }
 }
 
 pub struct TlsStream {
@@ -76,6 +88,22 @@ impl TlsStream {
         try!(c.connect_socket(tcp, servername)
               .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg)));
         Ok(TlsStream { ctx: c })
+    }
+
+    pub fn certificate_issuer(&self) -> String {
+        self.ctx.peer_cert_issuer()
+    }
+    pub fn certificate_hash(&self) -> String {
+        self.ctx.peer_cert_hash()
+    }
+    pub fn certificate_subject(&self) -> String {
+        self.ctx.peer_cert_subject()
+    }
+    pub fn version(&self) -> String {
+        self.ctx.conn_version()
+    }
+    pub fn cipher(&self) -> String {
+        self.ctx.conn_cipher()
     }
 }
 
