@@ -125,7 +125,7 @@ impl TlsContext {
         unsafe { from_cstr(ffi::tls_conn_version(self.ptr)) }
     }
     pub fn conn_cipher(&self) -> String {
-        unsafe { from_cstr(ffi::tls_conn_version(self.ptr)) }
+        unsafe { from_cstr(ffi::tls_conn_cipher(self.ptr)) }
     }
 
     /// Apply configuration settings to the context, consuming the config struct
