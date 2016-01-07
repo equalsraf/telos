@@ -437,3 +437,135 @@ pub fn init() -> bool {
 }
 
 pub mod net;
+
+pub struct ClientBuilder {
+    cfg: Option<TlsConfig>,
+    error: Option<TlsError>,
+}
+
+impl ClientBuilder {
+    /// Load CA certificates from PEM file
+    pub fn ca_file(mut self, path: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_ca_file(path).err();
+        }
+        self
+    }
+    /// Load CA certificates from folder
+    pub fn ca_path(mut self, path: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_ca_path(path).err();
+        }
+        self
+    }
+    /// Use CA certificates from PEM string
+    pub fn ca(mut self, ca: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_ca_mem(ca).err();
+        }
+        self
+    }
+    pub fn verify_depth(mut self, depth: i32) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            cfg.set_verify_depth(depth);
+        }
+        self
+    }
+    pub fn protocols(mut self, protocols: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_protocols(protocols).err();
+        }
+        self
+    }
+    pub fn ciphers(mut self, ciphers: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_ciphers(ciphers).err();
+        }
+        self
+    }
+    /// Disable certificate verification
+    pub fn insecure_noverifycert(mut self) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            cfg.insecure_noverifycert();
+        }
+        self
+    }
+    /// Disable hostname verification
+    pub fn insecure_noverifyname(mut self) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            cfg.insecure_noverifyname();
+        }
+        self
+    }
+
+    /// Create client context from settings
+    fn new_ctx(self) -> TlsResult<TlsContext> {
+        if let Some(err) = self.error {
+            Err(err)
+        } else {
+            let mut cli = try!(TlsContext::new_client());
+            // This unwrap should be safe, we can't have a cfg without an error
+            try!(cli.configure(self.cfg.unwrap()));
+            Ok(cli)
+        }
+    }
+
+    /// If port is empty, the port value is assumed to be part of the hostname string as host:port.
+    /// If servername is not empty it is used instead of the hostname for verification.
+    pub fn connect(self, hostname: &str,
+                              port: &str,
+                              servername: &str)
+                              -> TlsResult<TlsContext> {
+        let mut cli = try!(self.new_ctx());
+        try!(cli.connect_servername(hostname, port, servername));
+        Ok(cli)
+    }
+
+    #[cfg(unix)]
+    /// Establish a TLS connection over the given socket
+    pub fn connect_socket<F: IntoRawFd>(self, fd: F, servername: &str) -> TlsResult<TlsContext> {
+        let mut cli = try!(self.new_ctx());
+        try!(cli.connect_socket(fd, servername));
+        Ok(cli)
+    }
+
+    #[cfg(windows)]
+    /// Establish a TLS connection over the given socket
+    pub fn connect_socket<F: IntoRawSocket>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
+        let mut cli = try!(self.new_ctx());
+        try!(cli.connect_socket(fd, servername));
+        Ok(cli)
+    }
+}
+
+/// Create a new TLS client
+pub fn new_client() -> ClientBuilder {
+    match TlsConfig::new() {
+        Ok(cfg) => ClientBuilder { cfg: Some(cfg), error: None },
+        Err(err) => ClientBuilder { cfg: None, error: Some(err) },
+    }
+}
