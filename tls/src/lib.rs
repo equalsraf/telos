@@ -1,10 +1,47 @@
 //! Rust bindings for [libressl](http://libressl.org)'s libtls
-//!
 //! For the authoritative source on the inner workings of libtls check
 //! the [manpage](http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man3/tls_accept_fds.3?query=tls_init&sec=3).
+//!
+//! ## Client
+//!
+//! ```no_run
+//! use std::io::Write;
+//! tls::init();
+//! let mut client = tls::new_client()
+//!     .connect("www.duckduckgo.com", "443", "")
+//!     .unwrap();
+//! client.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
+//! ```
+//!
+//! ## Server
+//!
+//! The library does not handle TCP listening and binding, you need to handle the
+//! TCP server accept() and then call `TlsServer::accept`
+//!
+//! ```no_run
+//! use std::net::TcpListener;
+//! tls::init();
+//! let srv = TcpListener::bind("127.0.0.1:0").unwrap();
+//! let addr = srv.local_addr().unwrap();
+//! let mut tls_srv = tls::new_server()
+//!     .key_file("tests/private_key.key")
+//!     .cert_file("tests/certificate.crt")
+//!     .bind().unwrap();
+//! // Accept TCP connection, and then start TLS over it
+//! let tcp_conn = srv.incoming().next().unwrap().unwrap();
+//! let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
+//! ```
+//!
+//! ## Certificate Verification
+//!
+//! By default libtls will verify certificates using the system certificate store (usually defined
+//! as /etc/ssl/cert.pem). In some Linux flavours and in Windows this file does not exist and you
+//! will need to use one of the appropriate methods to load the correct certificates for your
+//! system - check the Builder classes for the ca methods.
 
 extern crate libc;
 
+/// TODO: Remove this from the public API
 use libc::time_t;
 use std::error::Error;
 use std::io;
@@ -116,8 +153,10 @@ impl ClientBuilder {
         }
     }
 
-    /// If port is empty, the port value is assumed to be part of the hostname string as host:port.
-    /// If servername is not empty it is used instead of the hostname for verification.
+    /// Open Connection to remote host
+    ///
+    /// - If port is empty, the port value is assumed to be part of the hostname string as `host:port`.
+    /// - If servername is not empty it is used instead of the hostname for verification.
     pub fn connect(self, hostname: &str,
                               port: &str,
                               servername: &str)
@@ -157,6 +196,9 @@ pub struct TlsStream {
 }
 
 impl TlsStream {
+    /// Executes the TLS handshake. This function is automatically called
+    /// when reading or writing, you usually don't need to call it unless
+    /// you want to force the handshake to finish sooner.
     pub fn handshake(&mut self) -> TlsResult<()> {
         self.ctx.handshake()
     }
@@ -279,12 +321,12 @@ pub fn new_server() -> ServerBuilder {
     }
 }
 
+/// TLS Server, used to start TLS session over existing sockets.
 pub struct TlsServer {
     ctx: TlsContext,
 }
 
 impl TlsServer {
-
     #[cfg(unix)]
     /// Start a new TLS connection over an existing socket (server-side)
     pub fn accept<F: IntoRawFd>(&mut self, fd: F) -> io::Result<TlsStream> {

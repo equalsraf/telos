@@ -24,13 +24,15 @@ pub struct TlsError {
 
 impl TlsError {
     /// The operation failed because it would block reading
-    pub fn want_pollin(&self) -> bool {
+    fn want_pollin(&self) -> bool {
         self.code == ffi::WANT_POLLIN
     }
     /// The operation failed because it would block writing
-    pub fn want_pollout(&self) -> bool {
+    fn want_pollout(&self) -> bool {
         self.code == ffi::WANT_POLLIN
     }
+    /// The operation failed because it would block, repeating
+    /// the same operation should succeed, but will block.
     pub fn wants_more(&self) -> bool {
         self.want_pollin() || self.want_pollout()
     }
@@ -62,10 +64,8 @@ impl convert::From<TlsError> for io::Error {
     }
 }
 
-/// Base result type for TLS operations
+/// result type for TLS operations
 pub type TlsResult<T> = Result<T, TlsError>;
-
-
 
 /// TLS configuration settings, see `TlsContext::configure` to apply them
 pub struct TlsConfig {

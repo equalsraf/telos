@@ -23,7 +23,6 @@ fn tls_server() {
                 .insecure_noverifyname()
                 .insecure_noverifycert()
                 .connect_socket(tcp_stream, "").unwrap();
-        //tls_stream.handshake().unwrap();
         let mut buf = [0u8; 128];
         let len = tls_stream.read(&mut buf).unwrap();
         assert_eq!(&buf[..len], b"hello");
