@@ -1,5 +1,5 @@
 extern crate tls;
-use tls::{init,TlsConfig};
+use tls::*;
 
 #[test]
 fn test_init() {
@@ -8,20 +8,20 @@ fn test_init() {
 }
 
 #[test]
-fn test_protocols() {
-    let mut cfg = TlsConfig::new().unwrap();
+fn client_ctx_defs() {
+    assert!(init());
 
-    // The following are all supported
-    cfg.set_protocols("all").unwrap();
-    cfg.set_protocols("legacy").unwrap();
-    cfg.set_protocols("default").unwrap();
-    cfg.set_protocols("secure").unwrap();
-    cfg.set_protocols("tlsv1").unwrap();
-    cfg.set_protocols("tlsv1.0").unwrap();
-    cfg.set_protocols("tlsv1.1").unwrap();
-    cfg.set_protocols("tlsv1.2").unwrap();
+    let c = TlsContext::new_client().unwrap();
 
-    // This is not valid
-    assert!(cfg.set_protocols("unknown-proto").is_err());
+    // These are the defaults before the connection is set
+    assert_eq!(c.conn_version(), "");
+    assert_eq!(c.conn_cipher(), "");
+    assert!(c.peer_cert_notbefore().is_err());
+    assert!(c.peer_cert_notafter().is_err());
+    assert_eq!(c.peer_cert_issuer(), "");
+    assert_eq!(c.peer_cert_subject(), "");
+    assert_eq!(c.peer_cert_hash(), "");
+    assert_eq!(c.peer_cert_contains_name("some.name"), false);
+    assert_eq!(c.peer_cert_provided(), false);
 }
 

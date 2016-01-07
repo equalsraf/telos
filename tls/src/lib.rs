@@ -437,8 +437,6 @@ pub fn init() -> bool {
     unsafe { (RET == 0) }
 }
 
-pub mod net;
-
 pub struct ClientBuilder {
     cfg: Option<TlsConfig>,
     error: Option<TlsError>,
@@ -634,3 +632,93 @@ impl Drop for TlsStream {
     }
 }
 
+pub struct ServerBuilder {
+    cfg: Option<TlsConfig>,
+    error: Option<TlsError>,
+}
+
+impl ServerBuilder {
+    pub fn key_file(mut self, path: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_key_file(path).err();
+        }
+        self
+    }
+    pub fn cert_file(mut self, path: &str) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+        if let Some(cfg) = self.cfg.as_mut() {
+            self.error = cfg.set_cert_file(path).err();
+        }
+        self
+    }
+
+    /// Create server context from settings
+    fn new_ctx(self) -> TlsResult<TlsContext> {
+        if let Some(err) = self.error {
+            Err(err)
+        } else {
+            let mut cli = try!(TlsContext::new_server());
+            // This unwrap should be safe, we can't have a cfg without an error
+            try!(cli.configure(self.cfg.unwrap()));
+            Ok(cli)
+        }
+    }
+    pub fn bind(self) -> TlsResult<TlsServer> {
+        let ctx = try!(self.new_ctx());
+        Ok(TlsServer {
+            ctx: ctx,
+        })
+    }
+}
+
+/// Create a new TLS server
+pub fn new_server() -> ServerBuilder {
+    match TlsConfig::new() {
+        Ok(cfg) => ServerBuilder { cfg: Some(cfg), error: None },
+        Err(err) => ServerBuilder { cfg: None, error: Some(err) },
+    }
+}
+
+pub struct TlsServer {
+    ctx: TlsContext,
+}
+
+impl TlsServer {
+
+    #[cfg(unix)]
+    /// Start a new TLS connection over an existing socket (server-side)
+    pub fn accept<F: IntoRawFd>(&mut self, fd: F) -> io::Result<TlsStream> {
+        let c = try!(self.ctx.accept_socket(fd));
+        Ok(TlsStream { ctx: c })
+    }
+
+    #[cfg(windows)]
+    /// Start a new TLS connection over an existing socket (server-side)
+    pub fn accept<F: IntoRawSocket>(&mut self, fd: F) -> TlsResult<TlsStream> {
+        let c = try!(self.ctx.accept_socket(fd));
+        Ok(TlsStream { ctx: c })
+    }
+}
+
+#[test]
+fn test_protocols() {
+    let mut cfg = TlsConfig::new().unwrap();
+
+    // The following are all supported
+    cfg.set_protocols("all").unwrap();
+    cfg.set_protocols("legacy").unwrap();
+    cfg.set_protocols("default").unwrap();
+    cfg.set_protocols("secure").unwrap();
+    cfg.set_protocols("tlsv1").unwrap();
+    cfg.set_protocols("tlsv1.0").unwrap();
+    cfg.set_protocols("tlsv1.1").unwrap();
+    cfg.set_protocols("tlsv1.2").unwrap();
+
+    // This is not valid
+    assert!(cfg.set_protocols("unknown-proto").is_err());
+}
