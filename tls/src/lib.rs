@@ -17,6 +17,7 @@ use std::fmt;
 use std::sync::{Once, ONCE_INIT};
 use std::io;
 use std::convert;
+use std::io::{Read, Write};
 #[cfg(unix)]
 use std::os::unix::io::IntoRawFd;
 #[cfg(windows)]
@@ -539,26 +540,26 @@ impl ClientBuilder {
     pub fn connect(self, hostname: &str,
                               port: &str,
                               servername: &str)
-                              -> TlsResult<TlsContext> {
-        let mut cli = try!(self.new_ctx());
-        try!(cli.connect_servername(hostname, port, servername));
-        Ok(cli)
+                              -> TlsResult<TlsStream> {
+        let mut ctx = try!(self.new_ctx());
+        try!(ctx.connect_servername(hostname, port, servername));
+        Ok(TlsStream {ctx: ctx})
     }
 
     #[cfg(unix)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawFd>(self, fd: F, servername: &str) -> TlsResult<TlsContext> {
-        let mut cli = try!(self.new_ctx());
-        try!(cli.connect_socket(fd, servername));
-        Ok(cli)
+    pub fn connect_socket<F: IntoRawFd>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
+        let mut ctx = try!(self.new_ctx());
+        try!(ctx.connect_socket(fd, servername));
+        Ok(TlsStream {ctx: ctx})
     }
 
     #[cfg(windows)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawSocket>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
-        let mut cli = try!(self.new_ctx());
-        try!(cli.connect_socket(fd, servername));
-        Ok(cli)
+    pub fn connect_socket<F: IntoRawSocket>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
+        let mut ctx = try!(self.new_ctx());
+        try!(ctx.connect_socket(fd, servername));
+        Ok(TlsStream {ctx: ctx})
     }
 }
 
@@ -569,3 +570,67 @@ pub fn new_client() -> ClientBuilder {
         Err(err) => ClientBuilder { cfg: None, error: Some(err) },
     }
 }
+
+pub struct TlsStream {
+    ctx: TlsContext,
+}
+
+impl TlsStream {
+    pub fn handshake(&mut self) -> TlsResult<()> {
+        self.ctx.handshake()
+    }
+
+    /// Close the connection
+    pub fn shutdown(&mut self) -> io::Result<()> {
+        if let Err(err) = self.ctx.close() {
+            if err.wants_more() {
+                try!(self.ctx.close());
+            } else {
+                return Err(io::Error::from(err));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn certificate_issuer(&self) -> String {
+        self.ctx.peer_cert_issuer()
+    }
+    pub fn certificate_hash(&self) -> String {
+        self.ctx.peer_cert_hash()
+    }
+    pub fn certificate_subject(&self) -> String {
+        self.ctx.peer_cert_subject()
+    }
+    pub fn version(&self) -> String {
+        self.ctx.conn_version()
+    }
+    pub fn cipher(&self) -> String {
+        self.ctx.conn_cipher()
+    }
+}
+
+impl Read for TlsStream {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.ctx
+            .read(buf)
+            .map_err(|err| io::Error::from(err))
+    }
+}
+
+impl Write for TlsStream {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.ctx
+            .write(buf)
+            .map_err(|err| io::Error::from(err))
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Drop for TlsStream {
+    fn drop(&mut self) {
+        let _ = self.ctx.close();
+    }
+}
+

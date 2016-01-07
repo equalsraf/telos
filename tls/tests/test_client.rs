@@ -1,6 +1,6 @@
 extern crate tls;
 use tls::*;
-use std::net::TcpStream;
+use std::io::{Read, Write};
 
 mod common;
 
@@ -44,11 +44,43 @@ fn test_client() {
     assert!(buf.starts_with(b"HTTP/1.1 "));
 }
 
-//#[test]
-//fn test_client_errors() {
-//    assert!(init());
-//
-//    let mut c = TlsContext::new_client().unwrap();
-//    c.handshake().unwrap();
-//}
+#[test]
+fn stream_write_read() {
+    assert!(init());
 
+    let mut cli = new_client()
+                .ca_file("tests/cert.pem")
+                .connect("www.google.com", "443", "")
+                .unwrap();
+
+    cli.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
+    let mut buf = [0u8; 256];
+    cli.read(&mut buf).unwrap();
+    assert!(buf.starts_with(b"HTTP/1.1 "));
+}
+
+#[test]
+fn shutdown_twice_fails() {
+    assert!(init());
+
+    let mut cli = new_client()
+                .ca_file("tests/cert.pem")
+                .connect("www.google.com", "443", "")
+                .unwrap();
+
+    cli.handshake().unwrap();
+    cli.shutdown().unwrap();
+    assert!(cli.shutdown().is_err());
+}
+
+#[test]
+fn shutdown_without_handshake_fails() {
+    assert!(init());
+
+    let mut cli = new_client()
+                .ca_file("tests/cert.pem")
+                .connect("www.google.com", "443", "")
+                .unwrap();
+
+    assert!(cli.shutdown().is_err());
+}

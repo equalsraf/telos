@@ -2,7 +2,6 @@ extern crate tls;
 extern crate rustc_serialize;
 extern crate docopt;
 
-use tls::net::TlsConnection;
 use docopt::Docopt;
 
 const USAGE: &'static str = "
@@ -38,28 +37,28 @@ fn main() {
 
     tls::init();
 
-    let mut c = TlsConnection::new().unwrap();
+    let mut c = tls::new_client()
+        .ca(include_str!("../tests/cert.pem"));
 
-    c.set_ca_mem(include_str!("../tests/cert.pem")).unwrap();
     if !args.flag_protocols.is_empty() {
-        c.set_protocols(&args.flag_protocols).unwrap();
+        c = c.protocols(&args.flag_protocols);
     }
     if !args.flag_ciphers.is_empty() {
-        c.set_ciphers(&args.flag_ciphers).unwrap();
+        c = c.ciphers(&args.flag_ciphers);
     }
     if args.flag_noverifycert || args.flag_accept_all {
-        c.insecure_noverifycert();
+        c = c.insecure_noverifycert();
     }
     if args.flag_noverifyname || args.flag_accept_all {
-        c.insecure_noverifyname();
+        c = c.insecure_noverifyname();
     }
 
     if args.flag_accept_all {
-        c.set_protocols("all").unwrap();
-        c.set_ciphers("legacy").unwrap();
+        c = c.protocols("all");
+        c = c.ciphers("legacy");
     }
 
-    let stream = c.connect(&args.arg_address, "").unwrap();
+    let stream = c.connect(&args.arg_address, "", "").unwrap();
 
     println!("Certificate Issuer: {}", stream.certificate_issuer());
     println!("Certificate Hash: {}", stream.certificate_hash());
