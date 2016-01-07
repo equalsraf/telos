@@ -35,12 +35,12 @@ pub struct TlsContext {
 
 impl TlsContext {
     /// Create a new client context
-    pub fn new_client() -> Option<TlsContext> {
+    pub fn new_client() -> TlsResult<TlsContext> {
         let p = unsafe { ffi::tls_client() };
         if p == ptr::null_mut() {
-            None
+            Err(TlsError::new("Unable to create TLS client"))
         } else {
-            Some(TlsContext {
+            Ok(TlsContext {
                 ptr: p,
                 cfg: None,
             })
@@ -118,21 +118,21 @@ impl TlsContext {
         self.rv_to_result(rv as i64)
     }
 
-    pub fn peer_cert_notbefore(&self) -> Option<time_t> {
+    pub fn peer_cert_notbefore(&self) -> TlsResult<time_t> {
         let rv = unsafe { ffi::tls_peer_cert_notbefore(self.ptr) };
         if rv == -1 {
-            None
+            Err(TlsError::new("Unable to get certificate information"))
         } else {
-            Some(rv)
+            Ok(rv)
         }
     }
 
-    pub fn peer_cert_notafter(&self) -> Option<time_t> {
+    pub fn peer_cert_notafter(&self) -> TlsResult<time_t> {
         let rv = unsafe { ffi::tls_peer_cert_notafter(self.ptr) };
         if rv == -1 {
-            None
+            Err(TlsError::new("Unable to get certificate information"))
         } else {
-            Some(rv)
+            Ok(rv)
         }
     }
 
@@ -214,12 +214,12 @@ impl TlsContext {
     }
 
     /// Create new server context
-    pub fn new_server() -> Option<TlsContext> {
+    pub fn new_server() -> TlsResult<TlsContext> {
         let p = unsafe { ffi::tls_server() };
         if p == ptr::null_mut() {
-            None
+            Err(TlsError::new("Unable to create TLS server"))
         } else {
-            Some(TlsContext {
+            Ok(TlsContext {
                 ptr: p,
                 cfg: None,
             })
@@ -273,43 +273,43 @@ pub struct TlsConfig {
 }
 
 impl TlsConfig {
-    pub fn new() -> Option<TlsConfig> {
+    pub fn new() -> TlsResult<TlsConfig> {
         let p = unsafe { ffi::tls_config_new() };
         if p == ptr::null_mut() {
-            None
+            Err(TlsError::new("Unable to create TLS config"))
         } else {
-            Some(TlsConfig { cfg: p })
+            Ok(TlsConfig { cfg: p })
         }
     }
 
-    pub fn set_ca_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_ca_file(&mut self, path: &str) -> TlsResult<()> {
         let rv = unsafe {
             let path_c = CString::from_vec_unchecked(path.bytes().collect());
             ffi::tls_config_set_ca_file(self.cfg, path_c.as_ptr())
         };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(TlsError::new("Unable to set CA file"))
         }
     }
-    pub fn set_ca_path(&mut self, path: &str) -> Option<()> {
+    pub fn set_ca_path(&mut self, path: &str) -> TlsResult<()> {
         let rv = unsafe {
             let path_c = str_c_ptr(path);
             ffi::tls_config_set_ca_path(self.cfg, path_c)
         };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(TlsError::new("Unable to set CA path"))
         }
     }
-    pub fn set_ca_mem(&mut self, ca: &str) -> Option<()> {
+    pub fn set_ca_mem(&mut self, ca: &str) -> TlsResult<()> {
         let rv = unsafe { ffi::tls_config_set_ca_mem(self.cfg, ca.as_ptr(), ca.len()) };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(TlsError::new("Unable to set CA from memory"))
         }
     }
     pub fn set_verify_depth(&mut self, depth: i32) {
@@ -321,48 +321,48 @@ impl TlsConfig {
     pub fn insecure_noverifycert(&mut self) {
         unsafe { ffi::tls_config_insecure_noverifycert(self.cfg) }
     }
-    pub fn set_key_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_key_file(&mut self, path: &str) -> TlsResult<()> {
         let rv = unsafe {
             let path_c = CString::from_vec_unchecked(path.bytes().collect());
             ffi::tls_config_set_key_file(self.cfg, path_c.as_ptr())
         };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(TlsError::new("Unable to set key file"))
         }
     }
-    pub fn set_cert_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_cert_file(&mut self, path: &str) -> TlsResult<()> {
         let rv = unsafe {
             let path_c = CString::from_vec_unchecked(path.bytes().collect());
             ffi::tls_config_set_cert_file(self.cfg, path_c.as_ptr())
         };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(TlsError::new("Unable to set certificate file"))
         }
     }
-    pub fn set_protocols(&mut self, protocols: &str) -> Option<()> {
+    pub fn set_protocols(&mut self, protocols: &str) -> TlsResult<()> {
         let mut proto = 0;
         unsafe {
             let proto_c = CString::from_vec_unchecked(protocols.bytes().collect());
             if ffi::tls_config_parse_protocols(&mut proto, proto_c.as_ptr()) == -1 {
-                return None;
+                return Err(TlsError::new(format!("Invalid protocols: {}", protocols)))
             }
             ffi::tls_config_set_protocols(self.cfg, proto);
         }
-        Some(())
+        Ok(())
     }
-    pub fn set_ciphers(&mut self, ciphers: &str) -> Option<()> {
+    pub fn set_ciphers(&mut self, ciphers: &str) -> TlsResult<()> {
         let rv = unsafe {
             let ciphers_c = CString::from_vec_unchecked(ciphers.bytes().collect());
             ffi::tls_config_set_ciphers(self.cfg, ciphers_c.as_ptr())
         };
         if rv == 0 {
-            Some(())
+            Ok(())
         } else {
-            None
+            return Err(TlsError::new(format!("Invalid ciphers: {}", ciphers)))
         }
     }
 }
@@ -392,6 +392,12 @@ impl TlsError {
     }
     fn wants_more(&self) -> bool {
         self.want_pollin() || self.want_pollout()
+    }
+    fn new<S: Into<String>>(msg: S) -> TlsError {
+        TlsError {
+            msg: msg.into(),
+            code: -1,
+        }
     }
 }
 

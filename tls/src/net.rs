@@ -10,12 +10,10 @@ pub struct TlsConnection {
     cfg: TlsConfig,
 }
 impl TlsConnection {
-    pub fn new() -> Option<TlsConnection> {
-        if let Some(cfg) = TlsConfig::new() {
-            Some(TlsConnection { cfg: cfg })
-        } else {
-            None
-        }
+    pub fn new() -> io::Result<TlsConnection> {
+        let cfg = try!(TlsConfig::new()
+                    .map_err(|err| io::Error::from(err)));
+        Ok(TlsConnection { cfg: cfg })
     }
 
     /// Connect to server, and process the TLS handshake
@@ -50,23 +48,28 @@ impl TlsConnection {
     }
 
 
-    pub fn set_ca_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_ca_file(&mut self, path: &str) -> io::Result<()> {
         self.cfg.set_ca_file(path)
+            .map_err(|err| io::Error::from(err))
     }
-    pub fn set_ca_path(&mut self, path: &str) -> Option<()> {
+    pub fn set_ca_path(&mut self, path: &str) -> io::Result<()> {
         self.cfg.set_ca_path(path)
+            .map_err(|err| io::Error::from(err))
     }
-    pub fn set_ca_mem(&mut self, ca: &str) -> Option<()> {
+    pub fn set_ca_mem(&mut self, ca: &str) -> io::Result<()> {
         self.cfg.set_ca_mem(ca)
+            .map_err(|err| io::Error::from(err))
     }
     pub fn set_verify_depth(&mut self, depth: i32) {
         self.cfg.set_verify_depth(depth)
     }
-    pub fn set_protocols(&mut self, protocols: &str) -> Option<()> {
+    pub fn set_protocols(&mut self, protocols: &str) -> io::Result<()> {
         self.cfg.set_protocols(protocols)
+            .map_err(|err| io::Error::from(err))
     }
-    pub fn set_ciphers(&mut self, ciphers: &str) -> Option<()> {
+    pub fn set_ciphers(&mut self, ciphers: &str) -> io::Result<()> {
         self.cfg.set_ciphers(ciphers)
+            .map_err(|err| io::Error::from(err))
     }
     pub fn insecure_noverifycert(&mut self) {
         self.cfg.insecure_noverifycert()
@@ -83,8 +86,7 @@ pub struct TlsStream {
 impl TlsStream {
     /// Convinience method to create TlsContext clients
     fn new_client() -> io::Result<TlsContext> {
-        TlsContext::new_client()
-            .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to create new TLS context"))
+        TlsContext::new_client().map_err(|err| io::Error::from(err))
     }
 
     /// Close the connection
@@ -146,11 +148,13 @@ pub struct TlsListenerBuilder {
 }
 
 impl TlsListenerBuilder {
-    pub fn set_key_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_key_file(&mut self, path: &str) -> io::Result<()> {
         self.cfg.set_key_file(path)
+                    .map_err(|err| io::Error::from(err))
     }
-    pub fn set_cert_file(&mut self, path: &str) -> Option<()> {
+    pub fn set_cert_file(&mut self, path: &str) -> io::Result<()> {
         self.cfg.set_cert_file(path)
+                    .map_err(|err| io::Error::from(err))
     }
     pub fn bind(self) -> io::Result<TlsListener> {
         let mut srv = try!(TlsListener::new_server());
@@ -168,16 +172,13 @@ pub struct TlsListener {
 impl TlsListener {
 
     fn new_server() -> io::Result<TlsContext> {
-        TlsContext::new_server()
-            .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to create new TLS context"))
+        TlsContext::new_server().map_err(|err| io::Error::from(err))
     }
 
-    pub fn new() -> Option<TlsListenerBuilder> {
-        if let Some(cfg) = TlsConfig::new() {
-            Some(TlsListenerBuilder { cfg: cfg })
-        } else {
-            None
-        }
+    pub fn new() -> io::Result<TlsListenerBuilder> {
+        let cfg = try!(TlsConfig::new()
+                    .map_err(|err| io::Error::from(err)));
+        Ok(TlsListenerBuilder { cfg: cfg })
     }
 
     pub fn accept(&mut self, tcp: TcpStream) -> io::Result<TlsStream> {

@@ -22,6 +22,6 @@ fn test_protocols() {
     cfg.set_protocols("tlsv1.2").unwrap();
 
     // This is not valid
-    assert_eq!(cfg.set_protocols("unknown-proto"), None);
+    assert!(cfg.set_protocols("unknown-proto").is_err());
 }
 

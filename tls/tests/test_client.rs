@@ -13,8 +13,8 @@ fn test_client_defs() {
     // These are the defaults before the connection is set
     assert_eq!(c.conn_version(), "");
     assert_eq!(c.conn_cipher(), "");
-    assert_eq!(c.peer_cert_notbefore(), None);
-    assert_eq!(c.peer_cert_notafter(), None);
+    assert!(c.peer_cert_notbefore().is_err());
+    assert!(c.peer_cert_notafter().is_err());
     assert_eq!(c.peer_cert_issuer(), "");
     assert_eq!(c.peer_cert_subject(), "");
     assert_eq!(c.peer_cert_hash(), "");
@@ -70,7 +70,7 @@ fn test_set_ca_mem() {
 
     let mut cfg = TlsConfig::new().unwrap();
     let pem = include_str!("cert.pem");
-    cfg.set_ca_mem(&pem);
+    cfg.set_ca_mem(&pem).unwrap();
 
     let mut c = TlsContext::new_client().unwrap();
     c.configure(cfg).unwrap();
