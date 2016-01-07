@@ -58,7 +58,7 @@ fn main() {
         c = c.ciphers("legacy");
     }
 
-    let stream = c.connect(&args.arg_address, "", "").unwrap();
+    let stream = c.connect(&args.arg_address, "", None).unwrap();
 
     println!("Certificate Issuer: {}", stream.certificate_issuer());
     println!("Certificate Hash: {}", stream.certificate_hash());

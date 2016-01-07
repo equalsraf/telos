@@ -8,7 +8,7 @@
 //! use std::io::Write;
 //! tls::init();
 //! let mut client = tls::new_client()
-//!     .connect("www.duckduckgo.com", "443", "")
+//!     .connect("www.duckduckgo.com", "443", None)
 //!     .unwrap();
 //! client.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
 //! ```
@@ -159,10 +159,10 @@ impl ClientBuilder {
     /// - If servername is not empty it is used instead of the hostname for verification.
     pub fn connect(self, hostname: &str,
                               port: &str,
-                              servername: &str)
+                              servername: Option<&str>)
                               -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
-        try!(ctx.connect_servername(hostname, port, servername));
+        try!(ctx.connect_servername(hostname, port, servername.unwrap_or("")));
         Ok(TlsStream {ctx: ctx})
     }
 

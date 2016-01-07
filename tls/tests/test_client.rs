@@ -8,7 +8,7 @@ fn test_client() {
     assert!(init());
 
     let mut c = new_client()
-        .connect("google.com", "443", "").unwrap();
+        .connect("google.com", "443", None).unwrap();
     c.handshake().unwrap();
 
     let notbefore = c.peer_cert_notbefore().unwrap();
@@ -31,7 +31,7 @@ fn stream_write_read() {
 
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
 
     cli.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
@@ -46,7 +46,7 @@ fn shutdown_twice_fails() {
 
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -60,7 +60,7 @@ fn shutdown_without_handshake_fails() {
 
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
 
     assert!(cli.shutdown().is_err());
@@ -73,7 +73,7 @@ fn ca_invalid() {
     let cli = new_client()
                 .ca_path(".")
                 .ca_file("")
-                .connect("www.google.com", "443", "");
+                .connect("www.google.com", "443", None);
     assert!(cli.is_err());
 }
 
@@ -84,7 +84,7 @@ fn ca_string() {
     let pem = include_str!("cert.pem");
     let mut cli = new_client()
                 .ca(&pem)
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -95,7 +95,7 @@ fn ca_string_invalid() {
 
     let cli = new_client()
                 .ca("--INVALID PEM")
-                .connect("www.google.com", "443", "");
+                .connect("www.google.com", "443", None);
     assert!(cli.is_err());
 }
 
@@ -104,7 +104,7 @@ fn connect_hostport() {
     assert!(init());
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com:443", "", "")
+                .connect("www.google.com:443", "", None)
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -114,7 +114,7 @@ fn connect_servername() {
     assert!(init());
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", "www.google.com")
+                .connect("www.google.com", "443", Some("www.google.com"))
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -124,7 +124,7 @@ fn connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect_socket(tcp,  "www.google.com")
+                .connect_socket(tcp, "www.google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -135,7 +135,7 @@ fn double_handshake_is_error() {
 
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -149,7 +149,7 @@ fn verify_depth() {
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
                 .verify_depth(0)
-                .connect("www.google.com", "443", "")
+                .connect("www.google.com", "443", None)
                 .unwrap();
     assert!(cli.handshake().is_err());
 }
