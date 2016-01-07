@@ -3,14 +3,12 @@ use std::io::{Read, Write};
 use tls::{new_client,init};
 use std::net::TcpStream;
 
-mod common;
-
 #[test]
 fn test_client() {
     assert!(init());
 
-    let mut c = common::tls_client();
-    c.connect_servername("google.com", "443", "").unwrap();
+    let mut c = new_client()
+        .connect("google.com", "443", "").unwrap();
     c.handshake().unwrap();
 
     let notbefore = c.peer_cert_notbefore().unwrap();
