@@ -196,9 +196,11 @@ pub struct TlsStream {
 }
 
 impl TlsStream {
-    /// Executes the TLS handshake. This function is automatically called
-    /// when reading or writing, you usually don't need to call it unless
-    /// you want to force the handshake to finish sooner.
+    /// Executes the TLS handshake. This function is automatically called when reading or writing,
+    /// you usually don't need to call it unless you want to force the handshake to finish sooner.
+    ///
+    /// Calling handshake multiple times, if the other end of the connection is not expecting it
+    /// will usually result in an error.
     pub fn handshake(&mut self) -> TlsResult<()> {
         self.ctx.handshake()
     }
