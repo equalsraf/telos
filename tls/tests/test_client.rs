@@ -8,6 +8,7 @@ fn test_client() {
     assert!(init());
 
     let mut c = new_client()
+        .ca_file("tests/cert.pem")
         .connect("google.com", "443", None).unwrap();
     c.handshake().unwrap();
 
