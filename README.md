@@ -22,4 +22,5 @@ To force static linking
     $ export LIBTLS_LINKAGE=static
 
 [![Travis-CI](https://travis-ci.org/equalsraf/rust-tls.svg?branch=master)](https://travis-ci.org/equalsraf/rust-tls)
+[![Appveyor](https://ci.appveyor.com/api/projects/status/w39rj54ub3iu88xs/branch/master?svg=true)](https://ci.appveyor.com/project/equalsraf/rust-tls/branch/master)
 [![Coverage Status](https://coveralls.io/repos/equalsraf/rust-tls/badge.svg?branch=master&service=github)](https://coveralls.io/github/equalsraf/rust-tls?branch=master)
