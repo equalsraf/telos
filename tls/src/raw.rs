@@ -148,7 +148,7 @@ impl TlsConfig {
         unsafe {
             let proto_c = CString::from_vec_unchecked(protocols.bytes().collect());
             if ffi::tls_config_parse_protocols(&mut proto, proto_c.as_ptr()) == -1 {
-                return Err(TlsError::new(format!("Invalid protocols: {}", protocols)))
+                return Err(TlsError::new(format!("Invalid protocols: {}", protocols)));
             }
             ffi::tls_config_set_protocols(self.cfg, proto);
         }
@@ -162,7 +162,7 @@ impl TlsConfig {
         if rv == 0 {
             Ok(())
         } else {
-            return Err(TlsError::new(format!("Invalid ciphers: {}", ciphers)))
+            return Err(TlsError::new(format!("Invalid ciphers: {}", ciphers)));
         }
     }
 }
@@ -428,4 +428,3 @@ pub fn init() -> bool {
     });
     unsafe { (RET == 0) }
 }
-

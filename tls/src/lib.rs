@@ -157,13 +157,14 @@ impl ClientBuilder {
     ///
     /// - If port is empty, the port value is assumed to be part of the hostname string as `host:port`.
     /// - If servername is not empty it is used instead of the hostname for verification.
-    pub fn connect(self, hostname: &str,
-                              port: &str,
-                              servername: Option<&str>)
-                              -> TlsResult<TlsStream> {
+    pub fn connect(self,
+                   hostname: &str,
+                   port: &str,
+                   servername: Option<&str>)
+                   -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
         try!(ctx.connect_servername(hostname, port, servername.unwrap_or("")));
-        Ok(TlsStream {ctx: ctx})
+        Ok(TlsStream { ctx: ctx })
     }
 
     #[cfg(unix)]
@@ -171,7 +172,7 @@ impl ClientBuilder {
     pub fn connect_socket<F: IntoRawFd>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
         try!(ctx.connect_socket(fd, servername));
-        Ok(TlsStream {ctx: ctx})
+        Ok(TlsStream { ctx: ctx })
     }
 
     #[cfg(windows)]
@@ -179,15 +180,25 @@ impl ClientBuilder {
     pub fn connect_socket<F: IntoRawSocket>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
         try!(ctx.connect_socket(fd, servername));
-        Ok(TlsStream {ctx: ctx})
+        Ok(TlsStream { ctx: ctx })
     }
 }
 
 /// Create a new TLS client
 pub fn new_client() -> ClientBuilder {
     match TlsConfig::new() {
-        Ok(cfg) => ClientBuilder { cfg: Some(cfg), error: None },
-        Err(err) => ClientBuilder { cfg: None, error: Some(err) },
+        Ok(cfg) => {
+            ClientBuilder {
+                cfg: Some(cfg),
+                error: None,
+            }
+        }
+        Err(err) => {
+            ClientBuilder {
+                cfg: None,
+                error: Some(err),
+            }
+        }
     }
 }
 
@@ -309,17 +320,25 @@ impl ServerBuilder {
     }
     pub fn bind(self) -> TlsResult<TlsServer> {
         let ctx = try!(self.new_ctx());
-        Ok(TlsServer {
-            ctx: ctx,
-        })
+        Ok(TlsServer { ctx: ctx })
     }
 }
 
 /// Create a new TLS server
 pub fn new_server() -> ServerBuilder {
     match TlsConfig::new() {
-        Ok(cfg) => ServerBuilder { cfg: Some(cfg), error: None },
-        Err(err) => ServerBuilder { cfg: None, error: Some(err) },
+        Ok(cfg) => {
+            ServerBuilder {
+                cfg: Some(cfg),
+                error: None,
+            }
+        }
+        Err(err) => {
+            ServerBuilder {
+                cfg: None,
+                error: Some(err),
+            }
+        }
     }
 }
 
