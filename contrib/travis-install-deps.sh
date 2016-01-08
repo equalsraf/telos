@@ -24,12 +24,12 @@ else
 	popd
 fi
 
-KCOV_VERSION=29
+KCOV_VERSION=30
 if [ -x "$DEPS/bin/kcov" ]; then
 	echo "Skipping instalation of kcov"
 else
 	wget -O kcov.tar.gz https://github.com/SimonKagstrom/kcov/archive/v${KCOV_VERSION}.tar.gz
-	echo "16f5d0ff0a6f8408ae6fe9415616afdd45f515b7 *kcov.tar.gz" | sha1sum -c -
+	echo "c2111b89acd114f7526123a5d41707c532fad02e *kcov.tar.gz" | sha1sum -c -
 	tar axf kcov.tar.gz
 	pushd kcov-${KCOV_VERSION}
 	mkdir build
