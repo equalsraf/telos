@@ -3,6 +3,9 @@ rust:
         - stable
         - beta
         - nightly
+env:
+        global:
+                - LIBRESSL=libressl-2.3.1
 matrix:
         exclude:
                 - rust: stable
@@ -16,6 +19,7 @@ script: contrib/travis-run.sh
 cache:
         directories:
                 - deps
+                - $LIBRESSL/tls
 addons:
         apt:
                 packages:

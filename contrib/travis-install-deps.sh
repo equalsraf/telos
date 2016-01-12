@@ -7,7 +7,7 @@ set -ev
 # to the correct ca-file.
 #
 
-LIBRESSL=libressl-2.3.1
+: ${LIBRESSL:="libressl-2.3.1"}
 DEPS=${PWD}/deps
 
 if [ -x "$DEPS/bin/openssl" ]; then
