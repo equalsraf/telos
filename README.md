@@ -1,5 +1,6 @@
 
 Bindings for libressl's libtls. These bindings require libressl 2.3 (i.e. libtls9)
+Have a look at the latest [docs](https://equalsraf.github.io/rust-tls-docs/master/tls/).
 
 ## Building
 
@@ -20,6 +21,8 @@ Likewise for the tls.h header
 To force static linking
 
     $ export LIBTLS_LINKAGE=static
+
+## Status
 
 [![Travis-CI](https://travis-ci.org/equalsraf/rust-tls.svg?branch=master)](https://travis-ci.org/equalsraf/rust-tls)
 [![Appveyor](https://ci.appveyor.com/api/projects/status/w39rj54ub3iu88xs/branch/master?svg=true)](https://ci.appveyor.com/project/equalsraf/rust-tls/branch/master)
