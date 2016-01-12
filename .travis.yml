@@ -4,6 +4,11 @@ rust:
         - beta
         - nightly
 matrix:
+        exclude:
+                - rust: stable
+        include:
+                - rust: stable
+                  env: PUSH_DOCS=1
         allow_failures:
                 - rust: nightly
 install: contrib/travis-install-deps.sh
@@ -18,4 +23,6 @@ addons:
                         - libcurl4-openssl-dev
                         - libelf-dev
                         - libdw-dev
-after_success: contrib/travis-kcov.sh
+after_success:
+- contrib/travis-kcov.sh
+- contrib/travis-docs.sh
