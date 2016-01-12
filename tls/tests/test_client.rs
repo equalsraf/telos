@@ -154,3 +154,31 @@ fn verify_depth() {
                 .unwrap();
     assert!(cli.handshake().is_err());
 }
+
+#[test]
+fn error_connect_no_host() {
+    assert!(init());
+    let cli = new_client()
+                .ca_file("tests/cert.pem")
+                .connect("", "443", None);
+    assert!(cli.is_err());
+}
+
+#[test]
+fn error_connect_no_port() {
+    assert!(init());
+    let cli = new_client()
+                .ca_file("tests/cert.pem")
+                .connect("www.google.com", "", None);
+    assert!(cli.is_err());
+}
+
+#[test]
+fn error_ciphers() {
+    assert!(init());
+    let cli = new_client()
+                .ca_file("tests/cert.pem")
+                .ciphers("unknown_cipher")
+                .connect("www.google.com", "443", None);
+    assert!(cli.is_err());
+}
