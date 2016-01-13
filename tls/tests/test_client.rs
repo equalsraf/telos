@@ -1,7 +1,9 @@
 extern crate tls;
 use std::io::{Read, Write};
 use tls::{new_client,init};
-use std::net::TcpStream;
+use std::net::{TcpStream, TcpListener};
+use std::thread;
+use std::time::Duration;
 
 #[test]
 fn test_client() {
@@ -25,6 +27,7 @@ fn test_client() {
     println!("{}", String::from_utf8_lossy(&buf));
     assert!(buf.starts_with(b"HTTP/1.1 "));
 }
+
 
 #[test]
 fn stream_write_read() {
@@ -181,4 +184,28 @@ fn error_ciphers() {
                 .ciphers("unknown_cipher")
                 .connect("www.google.com", "443", None);
     assert!(cli.is_err());
+}
+
+#[test]
+fn client_handshake_blocks() {
+    assert!(init());
+
+    let srv = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = srv.local_addr().unwrap();
+
+    let cli = thread::spawn(move ||{
+        let tcp_stream = TcpStream::connect(addr).unwrap();
+        tcp_stream.set_read_timeout(Some(Duration::new(1,0))).unwrap();
+        let mut tls_stream = tls::new_client()
+                .insecure_noverifyname()
+                .insecure_noverifycert()
+                .connect_socket(tcp_stream, "").unwrap();
+        let res = tls_stream.handshake();
+        assert!(res.is_err());
+        assert!(res.unwrap_err().wants_more());
+    });
+
+    // Accept TCP connection
+    let tcp_conn = srv.incoming().next().unwrap().unwrap();
+    let _ = cli.join();
 }
