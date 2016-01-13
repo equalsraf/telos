@@ -10,9 +10,9 @@ use std::fmt;
 use std::convert;
 use std::io;
 #[cfg(unix)]
-use std::os::unix::io::IntoRawFd;
+use std::os::unix::io::RawFd;
 #[cfg(windows)]
-use std::os::windows::io::IntoRawSocket;
+use std::os::windows::io::RawSocket;
 use std::sync::{Once, ONCE_INIT};
 use super::util::*;
 
@@ -212,41 +212,24 @@ impl TlsContext {
         }
     }
 
-    /// If port is empty, the port value is assumed to be part of the hostname string as host:port.
-    /// If servername is not empty it is used instead of the hostname for verification.
-    pub fn connect_servername(&mut self,
-                              hostname: &str,
-                              port: &str,
-                              servername: &str)
-                              -> TlsResult<()> {
-        let rv = unsafe {
-            let hostname_c = CString::from_vec_unchecked(hostname.bytes().collect()).as_ptr();
-            // Both port and servername can be NULL
-            let port_c = str_c_ptr(port);
-            let servername_c = str_c_ptr(servername);
-            ffi::tls_connect_servername(self.ptr, hostname_c, port_c, servername_c)
-        };
-        self.rv_to_result(rv as i64)
-    }
-
     #[cfg(unix)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawFd>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
+    pub fn connect_socket(&mut self, fd: RawFd, servername: &str) -> TlsResult<()> {
         let rv = unsafe {
             let servername_c = str_c_ptr(servername);
-            ffi::tls_connect_socket(self.ptr, fd.into_raw_fd(), servername_c)
+            ffi::tls_connect_socket(self.ptr, fd, servername_c)
         };
         self.rv_to_result(rv as i64)
     }
 
     #[cfg(windows)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawSocket>(&mut self, fd: F, servername: &str) -> TlsResult<()> {
+    pub fn connect_socket(&mut self, sock: RawSocket, servername: &str) -> TlsResult<()> {
         let rv = unsafe {
             let servername_c = str_c_ptr(servername);
             // This cast is not exactly safe
             // http://stackoverflow.com/questions/1953639/
-            ffi::tls_connect_socket(self.ptr, fd.into_raw_socket() as i32, servername_c)
+            ffi::tls_connect_socket(self.ptr, sock as i32, servername_c)
         };
         self.rv_to_result(rv as i64)
     }
@@ -378,9 +361,9 @@ impl TlsContext {
 
     #[cfg(unix)]
     /// Accept a new TLS connection over an existing socket
-    pub fn accept_socket<F: IntoRawFd>(&mut self, fd: F) -> TlsResult<TlsContext> {
+    pub fn accept_socket(&mut self, fd: RawFd) -> TlsResult<TlsContext> {
         let mut cctx: ffi::Tls = ptr::null_mut();;
-        let rv = unsafe { ffi::tls_accept_socket(self.ptr, &mut cctx, fd.into_raw_fd()) };
+        let rv = unsafe { ffi::tls_accept_socket(self.ptr, &mut cctx, fd) };
         self.rv_to_result(rv as i64)
             .map(|_| {
                 TlsContext {
@@ -392,12 +375,12 @@ impl TlsContext {
 
     #[cfg(windows)]
     /// Accept a new TLS connection over an existing socket
-    pub fn accept_socket<F: IntoRawSocket>(&mut self, fd: F) -> TlsResult<TlsContext> {
+    pub fn accept_socket(&mut self, sock: RawSocket) -> TlsResult<TlsContext> {
         let mut cctx: ffi::Tls = ptr::null_mut();;
         // This cast is not exactly safe
         // http://stackoverflow.com/questions/1953639/
         let rv = unsafe {
-            ffi::tls_accept_socket(self.ptr, &mut cctx, fd.into_raw_socket() as i32)
+            ffi::tls_accept_socket(self.ptr, &mut cctx, sock as i32)
         };
         self.rv_to_result(rv as i64)
             .map(|_| {

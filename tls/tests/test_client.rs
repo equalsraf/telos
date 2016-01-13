@@ -9,9 +9,10 @@ use std::time::Duration;
 fn test_client() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut c = new_client()
         .ca_file("tests/cert.pem")
-        .connect("google.com", "443", None).unwrap();
+        .from_socket(&tcp, "google.com").unwrap();
     c.handshake().unwrap();
 
     let notbefore = c.peer_cert_notbefore().unwrap();
@@ -33,9 +34,10 @@ fn test_client() {
 fn stream_write_read() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "google.com")
                 .unwrap();
 
     cli.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
@@ -48,9 +50,10 @@ fn stream_write_read() {
 fn shutdown_twice_fails() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "www.google.com")
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -62,9 +65,10 @@ fn shutdown_twice_fails() {
 fn shutdown_without_handshake_fails() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "google.com")
                 .unwrap();
 
     assert!(cli.shutdown().is_err());
@@ -74,10 +78,11 @@ fn shutdown_without_handshake_fails() {
 fn ca_invalid() {
     assert!(init());
     // This will fail because there is no CA file
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca_path(".")
                 .ca_file("")
-                .connect("www.google.com", "443", None);
+                .from_socket(&tcp, "google.com");
     assert!(cli.is_err());
 }
 
@@ -86,9 +91,10 @@ fn ca_string() {
     assert!(init());
 
     let pem = include_str!("cert.pem");
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca(&pem)
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -97,28 +103,20 @@ fn ca_string() {
 fn ca_string_invalid() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca("--INVALID PEM")
-                .connect("www.google.com", "443", None);
+                .from_socket(&tcp, "google.com");
     assert!(cli.is_err());
 }
 
 #[test]
 fn connect_hostport() {
     assert!(init());
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com:443", "", None)
-                .unwrap();
-    cli.handshake().unwrap();
-}
-
-#[test]
-fn connect_servername() {
-    assert!(init());
-    let mut cli = new_client()
-                .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", Some("www.google.com"))
+                .from_socket(&tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -128,7 +126,7 @@ fn connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect_socket(tcp, "www.google.com")
+                .from_socket(&tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -137,9 +135,10 @@ fn connect_socket() {
 fn double_handshake_is_error() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "google.com")
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -150,39 +149,23 @@ fn double_handshake_is_error() {
 fn verify_depth() {
     assert!(init());
 
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
                 .verify_depth(0)
-                .connect("www.google.com", "443", None)
+                .from_socket(&tcp, "google.com")
                 .unwrap();
     assert!(cli.handshake().is_err());
 }
 
 #[test]
-fn error_connect_no_host() {
-    assert!(init());
-    let cli = new_client()
-                .ca_file("tests/cert.pem")
-                .connect("", "443", None);
-    assert!(cli.is_err());
-}
-
-#[test]
-fn error_connect_no_port() {
-    assert!(init());
-    let cli = new_client()
-                .ca_file("tests/cert.pem")
-                .connect("www.google.com", "", None);
-    assert!(cli.is_err());
-}
-
-#[test]
 fn error_ciphers() {
     assert!(init());
+    let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca_file("tests/cert.pem")
                 .ciphers("unknown_cipher")
-                .connect("www.google.com", "443", None);
+                .from_socket(&tcp, "google.com");
     assert!(cli.is_err());
 }
 
@@ -199,7 +182,7 @@ fn client_handshake_blocks() {
         let mut tls_stream = tls::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
-                .connect_socket(tcp_stream, "").unwrap();
+                .from_socket(&tcp_stream, "").unwrap();
         let res = tls_stream.handshake();
         assert!(res.is_err());
         assert!(res.unwrap_err().wants_more());

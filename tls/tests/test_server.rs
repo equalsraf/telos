@@ -23,7 +23,7 @@ fn tls_server() {
         let mut tls_stream = tls::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
-                .connect_socket(tcp_stream, "").unwrap();
+                .from_socket(&tcp_stream, "").unwrap();
         let mut buf = [0u8; 128];
         let len = tls_stream.read(&mut buf).unwrap();
         assert_eq!(&buf[..len], b"hello");
@@ -31,7 +31,7 @@ fn tls_server() {
 
     // Accept TCP connection
     let tcp_conn = srv.incoming().next().unwrap().unwrap();
-    let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
+    let mut tls_conn = tls_srv.accept(&tcp_conn).unwrap();
     tls_conn.write(b"hello").unwrap();
 
     let _ = cli.join();
@@ -54,7 +54,7 @@ fn double_handshake() {
         let mut tls_stream = tls::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
-                .connect_socket(tcp_stream, "").unwrap();
+                .from_socket(&tcp_stream, "").unwrap();
         let mut buf = [0u8; 128];
         let len = tls_stream.read(&mut buf).unwrap();
         assert_eq!(&buf[..len], b"hello");
@@ -66,7 +66,7 @@ fn double_handshake() {
 
     // Accept TCP connection
     let tcp_conn = srv.incoming().next().unwrap().unwrap();
-    let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
+    let mut tls_conn = tls_srv.accept(&tcp_conn).unwrap();
     tls_conn.write(b"hello").unwrap();
     tls_conn.handshake().unwrap();
     tls_conn.write(b"hello").unwrap();
@@ -94,7 +94,7 @@ fn server_handshake_does_nothing() {
 
     // Accept TCP connection
     let tcp_conn = srv.incoming().next().unwrap().unwrap();
-    let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
+    let mut tls_conn = tls_srv.accept(&tcp_conn).unwrap();
 
     // It is slightly unexpected but this will succeed, this
     // test is here just in case this behaviour changes

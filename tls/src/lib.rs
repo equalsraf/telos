@@ -6,9 +6,11 @@
 //!
 //! ```no_run
 //! use std::io::Write;
+//! use std::net::TcpStream;
 //! tls::init();
+//! let tcp = TcpStream::connect("google.com:443").unwrap();
 //! let mut client = tls::new_client()
-//!     .connect("www.duckduckgo.com", "443", None)
+//!     .from_socket(&tcp, "google.com")
 //!     .unwrap();
 //! client.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
 //! ```
@@ -29,7 +31,7 @@
 //!     .bind().unwrap();
 //! // Accept TCP connection, and then start TLS over it
 //! let tcp_conn = srv.incoming().next().unwrap().unwrap();
-//! let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
+//! let mut tls_conn = tls_srv.accept(&tcp_conn).unwrap();
 //! ```
 //!
 //! ## Certificate Verification
@@ -47,9 +49,9 @@ use std::error::Error;
 use std::io;
 use std::io::{Read, Write};
 #[cfg(unix)]
-use std::os::unix::io::IntoRawFd;
+use std::os::unix::io::AsRawFd;
 #[cfg(windows)]
-use std::os::windows::io::IntoRawSocket;
+use std::os::windows::io::AsRawSocket;
 
 mod util;
 mod raw;
@@ -153,33 +155,23 @@ impl ClientBuilder {
         }
     }
 
-    /// Open Connection to remote host
-    ///
-    /// - If port is empty, the port value is assumed to be part of the hostname string as `host:port`.
-    /// - If servername is not empty it is used instead of the hostname for verification.
-    pub fn connect(self,
-                   hostname: &str,
-                   port: &str,
-                   servername: Option<&str>)
-                   -> TlsResult<TlsStream> {
-        let mut ctx = try!(self.new_ctx());
-        try!(ctx.connect_servername(hostname, port, servername.unwrap_or("")));
-        Ok(TlsStream { ctx: ctx })
-    }
-
     #[cfg(unix)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawFd>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
+    pub fn from_socket<F: AsRawFd>(self, ifd: &F, servername: &str) -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
+        let fd = ifd.as_raw_fd();
         try!(ctx.connect_socket(fd, servername));
-        Ok(TlsStream { ctx: ctx })
+        Ok(TlsStream {
+            ctx: ctx,
+        })
     }
 
     #[cfg(windows)]
     /// Establish a TLS connection over the given socket
-    pub fn connect_socket<F: IntoRawSocket>(self, fd: F, servername: &str) -> TlsResult<TlsStream> {
+    pub fn from_socket<F: AsRawSocket>(self, isock: &F, servername: &str) -> TlsResult<TlsStream> {
         let mut ctx = try!(self.new_ctx());
-        try!(ctx.connect_socket(fd, servername));
+        let sock = isock.as_raw_socket();
+        try!(ctx.connect_socket(sock, servername));
         Ok(TlsStream { ctx: ctx })
     }
 }
@@ -350,15 +342,19 @@ pub struct TlsServer {
 impl TlsServer {
     #[cfg(unix)]
     /// Start a new TLS connection over an existing socket (server-side)
-    pub fn accept<F: IntoRawFd>(&mut self, fd: F) -> io::Result<TlsStream> {
+    pub fn accept<F: AsRawFd>(&mut self, ifd: &F) -> io::Result<TlsStream> {
+        let fd = ifd.as_raw_fd();
         let c = try!(self.ctx.accept_socket(fd));
-        Ok(TlsStream { ctx: c })
+        Ok(TlsStream {
+            ctx: c,
+        })
     }
 
     #[cfg(windows)]
     /// Start a new TLS connection over an existing socket (server-side)
-    pub fn accept<F: IntoRawSocket>(&mut self, fd: F) -> TlsResult<TlsStream> {
-        let c = try!(self.ctx.accept_socket(fd));
+    pub fn accept<F: AsRawSocket>(&mut self, isock: &F) -> TlsResult<TlsStream> {
+        let sock = isock.as_raw_socket();
+        let c = try!(self.ctx.accept_socket(sock));
         Ok(TlsStream { ctx: c })
     }
 }

@@ -3,12 +3,13 @@ extern crate rustc_serialize;
 extern crate docopt;
 
 use docopt::Docopt;
+use std::net::TcpStream;
 
 const USAGE: &'static str = "
 conninfo
 
 Usage:
-  conninfo [options] <address>
+  conninfo [options] <address> <port>
   conninfo --help
 
 Options:
@@ -23,6 +24,7 @@ Options:
 #[derive(Debug,RustcDecodable)]
 struct Args {
     arg_address: String,
+    arg_port: u16,
     flag_protocols: String,
     flag_ciphers: String,
     flag_noverifycert: bool,
@@ -58,7 +60,9 @@ fn main() {
         c = c.ciphers("legacy");
     }
 
-    let stream = c.connect(&args.arg_address, "", None).unwrap();
+    let tcp_stream = TcpStream::connect((&*args.arg_address, args.arg_port)).unwrap();
+    let mut stream = c.from_socket(&tcp_stream, &args.arg_address).unwrap();
+    stream.handshake().unwrap();
 
     println!("Certificate Issuer: {}", stream.certificate_issuer());
     println!("Certificate Hash: {}", stream.certificate_hash());
