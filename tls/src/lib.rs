@@ -40,6 +40,12 @@
 //! as /etc/ssl/cert.pem). In some Linux flavours and in Windows this file does not exist and you
 //! will need to use one of the appropriate methods to load the correct certificates for your
 //! system - check the Builder classes for the ca methods.
+//!
+//! ## Connection Lifetime
+//!
+//! The `from_socket()` and `accept()` methods build new connections on top of
+//! `RawFd`/`RawSocket`. Destroying the TlsStream object WILL NOT cause the underlying
+//! sockets to be closed, you need to close them yourself.
 
 extern crate libc;
 
@@ -208,7 +214,7 @@ impl TlsStream {
         self.ctx.handshake()
     }
 
-    /// Close the connection
+    /// Close TLS connection. This will not close the underlying transport.
     pub fn shutdown(&mut self) -> io::Result<()> {
         if let Err(err) = self.ctx.close() {
             if err.wants_more() {
@@ -220,12 +226,18 @@ impl TlsStream {
         Ok(())
     }
 
+    /// Calling this method before the handshake is complete causes this method
+    /// to return an empty string. See [handshake()](#method.handshake).
     pub fn certificate_issuer(&self) -> String {
         self.ctx.peer_cert_issuer()
     }
+    /// Calling this method before the handshake is complete causes this method
+    /// to return an empty string. See [handshake()](#method.handshake).
     pub fn certificate_hash(&self) -> String {
         self.ctx.peer_cert_hash()
     }
+    /// Calling this method before the handshake is complete causes this method
+    /// to return an empty string. See [handshake()](#method.handshake).
     pub fn certificate_subject(&self) -> String {
         self.ctx.peer_cert_subject()
     }
@@ -241,9 +253,13 @@ impl TlsStream {
     pub fn peer_cert_contains_name(&self, name: &str) -> bool {
         self.ctx.peer_cert_contains_name(name)
     }
+    /// Calling this method before the handshake is complete causes this method
+    /// to return an empty string. See [handshake()](#method.handshake).
     pub fn version(&self) -> String {
         self.ctx.conn_version()
     }
+    /// Calling this method before the handshake is complete causes this method
+    /// to return an empty string. See [handshake()](#method.handshake).
     pub fn cipher(&self) -> String {
         self.ctx.conn_cipher()
     }
