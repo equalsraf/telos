@@ -2,6 +2,7 @@
 #[cfg(windows)]
 extern crate ws2_32;
 
+#[cfg(windows)]
 use std::mem;
 use std::ffi::{CStr, CString};
 use libc::c_char;
