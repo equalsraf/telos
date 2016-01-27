@@ -18,7 +18,7 @@ install:
 - set PATH=%LIBTLS_LIBRARY_PATH%;%PATH%
 - openssl version
 platform:
-- rust-1.5.0-i686-pc-windows-gnu.exe
+- rust-1.6.0-i686-pc-windows-gnu.exe
 - rust-beta-i686-pc-windows-gnu.exe
 # To build against multiple rust versions add them here
 build: false
