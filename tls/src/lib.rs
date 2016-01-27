@@ -1,6 +1,8 @@
 //! Rust bindings for [libressl](http://libressl.org)'s libtls
 //! For the authoritative source on the inner workings of libtls check
 //! the [manpage](http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man3/tls_accept_fds.3?query=tls_init&sec=3).
+//! The [raw](raw/index.html) module holds the bindings around libtls. A more idiomatic API is
+//! is provided here.
 //!
 //! ## Client
 //!
@@ -58,7 +60,7 @@ use std::os::unix::io::AsRawFd;
 use std::os::windows::io::AsRawSocket;
 
 mod util;
-mod raw;
+pub mod raw;
 use raw::{TlsConfig, TlsContext};
 
 pub use raw::{TlsResult, TlsError};

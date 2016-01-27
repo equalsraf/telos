@@ -1,3 +1,6 @@
+//! Minimal bindings around libtls. These are not very ergonomic, and may
+//! allow you to issue calls that can never succeed (e.g. read/write a server
+//! context).
 
 extern crate tls_sys as ffi;
 extern crate libc;
