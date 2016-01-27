@@ -218,6 +218,23 @@ impl TlsContext {
         }
     }
 
+    /// If port is empty, the port value is assumed to be part of the hostname string as host:port.
+    /// If servername is not empty it is used instead of the hostname for verification.
+    pub fn connect_servername(&mut self,
+                              hostname: &str,
+                              port: &str,
+                              servername: &str)
+                              -> TlsResult<()> {
+        let rv = unsafe {
+            let hostname_c = CString::from_vec_unchecked(hostname.bytes().collect()).as_ptr();
+            // Both port and servername can be NULL
+            let port_c = str_c_ptr(port);
+            let servername_c = str_c_ptr(servername);
+            ffi::tls_connect_servername(self.ptr, hostname_c, port_c, servername_c)
+        };
+        self.rv_to_result(rv as i64)
+    }
+
     #[cfg(unix)]
     /// Establish a TLS connection over the given socket
     pub fn connect_socket(&mut self, fd: RawFd, servername: &str) -> TlsResult<()> {
@@ -416,4 +433,36 @@ pub fn init() -> bool {
         unsafe { RET = ffi::tls_init() };
     });
     unsafe { (RET == 0) }
+}
+
+#[test]
+fn connect_servername() {
+    assert!(init());
+    let mut cfg = TlsConfig::new().unwrap();
+    cfg.set_ca_file("tests/cert.pem").unwrap();
+    let mut cli = TlsContext::new_client().unwrap();
+    cli.configure(cfg).unwrap();
+    cli.connect_servername("www.google.com", "443", "")
+       .unwrap();
+    cli.handshake().unwrap();
+}
+
+#[test]
+fn error_connect_no_host() {
+    assert!(init());
+    let mut cfg = TlsConfig::new().unwrap();
+    cfg.set_ca_file("tests/cert.pem").unwrap();
+    let mut cli = TlsContext::new_client().unwrap();
+    assert!(cli.connect_servername("", "443", "")
+            .is_err());
+}
+
+#[test]
+fn error_connect_no_port() {
+    assert!(init());
+    let mut cfg = TlsConfig::new().unwrap();
+    cfg.set_ca_file("tests/cert.pem").unwrap();
+    let mut cli = TlsContext::new_client().unwrap();
+    assert!(cli.connect_servername("www.google.com", "", "")
+            .is_err());
 }
