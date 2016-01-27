@@ -37,8 +37,6 @@ fn main() {
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    tls::init();
-
     let mut c = tls::new_client()
         .ca(include_str!("../tests/cert.pem"));
 

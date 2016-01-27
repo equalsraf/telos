@@ -36,7 +36,7 @@ impl TlsError {
     pub fn wants_more(&self) -> bool {
         self.want_pollin() || self.want_pollout()
     }
-    fn new<S: Into<String>>(msg: S) -> TlsError {
+    pub fn new<S: Into<String>>(msg: S) -> TlsError {
         TlsError {
             msg: msg.into(),
             code: -1,

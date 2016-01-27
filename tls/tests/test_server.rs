@@ -1,6 +1,5 @@
 
 extern crate tls;
-use tls::init;
 use std::io::{Write,Read};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
@@ -8,8 +7,6 @@ use std::time::Duration;
 
 #[test]
 fn tls_server() {
-    assert!(init());
-
     let mut tls_srv = tls::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")
@@ -39,8 +36,6 @@ fn tls_server() {
 
 #[test]
 fn double_handshake() {
-    assert!(init());
-
     let mut tls_srv = tls::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")
@@ -77,8 +72,6 @@ fn double_handshake() {
 
 #[test]
 fn server_handshake_does_nothing() {
-    assert!(init());
-
     let mut tls_srv = tls::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")

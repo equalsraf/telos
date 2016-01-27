@@ -1,14 +1,12 @@
 extern crate tls;
 use std::io::{Read, Write};
-use tls::{new_client,init};
+use tls::new_client;
 use std::net::{TcpStream, TcpListener};
 use std::thread;
 use std::time::Duration;
 
 #[test]
 fn test_client() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut c = new_client()
         .ca_file("tests/cert.pem")
@@ -32,8 +30,6 @@ fn test_client() {
 
 #[test]
 fn stream_write_read() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -48,8 +44,6 @@ fn stream_write_read() {
 
 #[test]
 fn shutdown_twice_fails() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -63,8 +57,6 @@ fn shutdown_twice_fails() {
 
 #[test]
 fn shutdown_without_handshake_fails() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -76,7 +68,6 @@ fn shutdown_without_handshake_fails() {
 
 #[test]
 fn ca_invalid() {
-    assert!(init());
     // This will fail because there is no CA file
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
@@ -88,8 +79,6 @@ fn ca_invalid() {
 
 #[test]
 fn ca_string() {
-    assert!(init());
-
     let pem = include_str!("cert.pem");
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
@@ -101,8 +90,6 @@ fn ca_string() {
 
 #[test]
 fn ca_string_invalid() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca("--INVALID PEM")
@@ -112,7 +99,6 @@ fn ca_string_invalid() {
 
 #[test]
 fn connect_hostport() {
-    assert!(init());
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -133,8 +119,6 @@ fn connect_socket() {
 
 #[test]
 fn double_handshake_is_error() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -147,8 +131,6 @@ fn double_handshake_is_error() {
 
 #[test]
 fn verify_depth() {
-    assert!(init());
-
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -160,7 +142,6 @@ fn verify_depth() {
 
 #[test]
 fn error_ciphers() {
-    assert!(init());
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca_file("tests/cert.pem")
@@ -171,8 +152,6 @@ fn error_ciphers() {
 
 #[test]
 fn client_handshake_blocks() {
-    assert!(init());
-
     let srv = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = srv.local_addr().unwrap();
 

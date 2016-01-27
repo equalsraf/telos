@@ -7,7 +7,6 @@
 //! ```no_run
 //! use std::io::Write;
 //! use std::net::TcpStream;
-//! tls::init();
 //! let tcp = TcpStream::connect("google.com:443").unwrap();
 //! let mut client = tls::new_client()
 //!     .from_socket(&tcp, "google.com")
@@ -22,7 +21,6 @@
 //!
 //! ```no_run
 //! use std::net::TcpListener;
-//! tls::init();
 //! let srv = TcpListener::bind("127.0.0.1:0").unwrap();
 //! let addr = srv.local_addr().unwrap();
 //! let mut tls_srv = tls::new_server()
@@ -63,7 +61,7 @@ mod util;
 mod raw;
 use raw::{TlsConfig, TlsContext};
 
-pub use raw::{TlsResult, TlsError, init};
+pub use raw::{TlsResult, TlsError};
 
 pub struct ClientBuilder {
     cfg: Option<TlsConfig>,
@@ -184,6 +182,13 @@ impl ClientBuilder {
 
 /// Create a new TLS client
 pub fn new_client() -> ClientBuilder {
+    if !raw::init() {
+        return ClientBuilder {
+            cfg: None,
+            error: Some(TlsError::new("Failed to initialize libtls")),
+        }
+    }
+
     match TlsConfig::new() {
         Ok(cfg) => {
             ClientBuilder {
@@ -334,6 +339,13 @@ impl ServerBuilder {
 
 /// Create a new TLS server
 pub fn new_server() -> ServerBuilder {
+    if !raw::init() {
+        return ServerBuilder {
+            cfg: None,
+            error: Some(TlsError::new("Failed to initialize libtls")),
+        }
+    }
+
     match TlsConfig::new() {
         Ok(cfg) => {
             ServerBuilder {
@@ -395,8 +407,6 @@ fn test_protocols() {
 
 #[test]
 fn client_ctx_defs() {
-    assert!(init());
-
     let c = TlsContext::new_client().unwrap();
 
     // These are the defaults before the connection is set
