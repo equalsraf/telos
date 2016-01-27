@@ -67,4 +67,6 @@ fn main() {
     println!("Certificate Subject: {}", stream.certificate_subject());
     println!("Connection Version: {}", stream.version());
     println!("Connection Cipher: {}", stream.cipher());
+    println!("Valid from: {}", stream.peer_cert_notbefore().unwrap());
+    println!("Valid Until: {}", stream.peer_cert_notafter().unwrap());
 }

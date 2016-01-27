@@ -6,7 +6,7 @@ extern crate tls_sys as ffi;
 extern crate libc;
 
 use std::ffi::CString;
-use libc::{time_t, c_void, size_t};
+use libc::{c_void, size_t};
 use std::ptr;
 use std::error::Error;
 use std::fmt;
@@ -18,6 +18,9 @@ use std::os::unix::io::RawFd;
 use std::os::windows::io::RawSocket;
 use std::sync::{Once, ONCE_INIT};
 use super::util::*;
+use chrono::datetime::DateTime;
+use chrono::naive::datetime::NaiveDateTime;
+use chrono::offset::utc::UTC;
 
 #[derive(Debug)]
 pub struct TlsError {
@@ -254,21 +257,21 @@ impl TlsContext {
         self.rv_to_result(rv as i64)
     }
 
-    pub fn peer_cert_notbefore(&self) -> TlsResult<time_t> {
+    pub fn peer_cert_notbefore(&self) -> TlsResult<DateTime<UTC>> {
         let rv = unsafe { ffi::tls_peer_cert_notbefore(self.ptr) };
         if rv == -1 {
             Err(TlsError::new("Unable to get certificate information"))
         } else {
-            Ok(rv)
+            Ok(DateTime::from_utc(NaiveDateTime::from_timestamp(rv as i64, 0), UTC))
         }
     }
 
-    pub fn peer_cert_notafter(&self) -> TlsResult<time_t> {
+    pub fn peer_cert_notafter(&self) -> TlsResult<DateTime<UTC>> {
         let rv = unsafe { ffi::tls_peer_cert_notafter(self.ptr) };
         if rv == -1 {
             Err(TlsError::new("Unable to get certificate information"))
         } else {
-            Ok(rv)
+            Ok(DateTime::from_utc(NaiveDateTime::from_timestamp(rv as i64, 0), UTC))
         }
     }
 

@@ -47,10 +47,9 @@
 //! `RawFd`/`RawSocket`. Destroying the TlsStream object WILL NOT cause the underlying
 //! sockets to be closed, you need to close them yourself.
 
+extern crate chrono;
 extern crate libc;
 
-/// TODO: Remove this from the public API
-use libc::time_t;
 use std::error::Error;
 use std::io;
 use std::io::{Read, Write};
@@ -58,6 +57,8 @@ use std::io::{Read, Write};
 use std::os::unix::io::AsRawFd;
 #[cfg(windows)]
 use std::os::windows::io::AsRawSocket;
+use chrono::datetime::DateTime;
+use chrono::offset::utc::UTC;
 
 mod util;
 pub mod raw;
@@ -251,10 +252,10 @@ impl TlsStream {
     pub fn peer_cert_provided(&self) -> bool {
         self.ctx.peer_cert_provided()
     }
-    pub fn peer_cert_notbefore(&self) -> TlsResult<time_t> {
+    pub fn peer_cert_notbefore(&self) -> TlsResult<DateTime<UTC>> {
         self.ctx.peer_cert_notbefore()
     }
-    pub fn peer_cert_notafter(&self) -> TlsResult<time_t> {
+    pub fn peer_cert_notafter(&self) -> TlsResult<DateTime<UTC>> {
         self.ctx.peer_cert_notafter()
     }
     pub fn peer_cert_contains_name(&self, name: &str) -> bool {
