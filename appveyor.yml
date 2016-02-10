@@ -23,4 +23,4 @@ platform:
 # To build against multiple rust versions add them here
 build: false
 test_script:
-- cargo test --verbose --manifest-path tls/Cargo.toml
+- cargo test --verbose --manifest-path telos/Cargo.toml

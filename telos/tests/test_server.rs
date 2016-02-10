@@ -1,5 +1,5 @@
 
-extern crate tls;
+extern crate telos;
 use std::io::{Write,Read};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
@@ -7,7 +7,7 @@ use std::time::Duration;
 
 #[test]
 fn tls_server() {
-    let mut tls_srv = tls::new_server()
+    let mut tls_srv = telos::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")
         .bind().unwrap();
@@ -17,7 +17,7 @@ fn tls_server() {
 
     let cli = thread::spawn(move ||{
         let tcp_stream = TcpStream::connect(addr).unwrap();
-        let mut tls_stream = tls::new_client()
+        let mut tls_stream = telos::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
                 .from_socket(&tcp_stream, "").unwrap();
@@ -36,7 +36,7 @@ fn tls_server() {
 
 #[test]
 fn double_handshake() {
-    let mut tls_srv = tls::new_server()
+    let mut tls_srv = telos::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")
         .bind().unwrap();
@@ -46,7 +46,7 @@ fn double_handshake() {
 
     let cli = thread::spawn(move ||{
         let tcp_stream = TcpStream::connect(addr).unwrap();
-        let mut tls_stream = tls::new_client()
+        let mut tls_stream = telos::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
                 .from_socket(&tcp_stream, "").unwrap();
@@ -72,7 +72,7 @@ fn double_handshake() {
 
 #[test]
 fn server_handshake_does_nothing() {
-    let mut tls_srv = tls::new_server()
+    let mut tls_srv = telos::new_server()
         .key_file("tests/private_key.key")
         .cert_file("tests/certificate.crt")
         .bind().unwrap();

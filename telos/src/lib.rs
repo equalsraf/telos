@@ -10,7 +10,7 @@
 //! use std::io::Write;
 //! use std::net::TcpStream;
 //! let tcp = TcpStream::connect("google.com:443").unwrap();
-//! let mut client = tls::new_client()
+//! let mut client = telos::new_client()
 //!     .from_socket(&tcp, "google.com")
 //!     .unwrap();
 //! client.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
@@ -25,7 +25,7 @@
 //! use std::net::TcpListener;
 //! let srv = TcpListener::bind("127.0.0.1:0").unwrap();
 //! let addr = srv.local_addr().unwrap();
-//! let mut tls_srv = tls::new_server()
+//! let mut tls_srv = telos::new_server()
 //!     .key_file("tests/private_key.key")
 //!     .cert_file("tests/certificate.crt")
 //!     .bind().unwrap();

@@ -1,4 +1,4 @@
-extern crate tls;
+extern crate telos;
 extern crate rustc_serialize;
 extern crate docopt;
 
@@ -37,7 +37,7 @@ fn main() {
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    let mut c = tls::new_client()
+    let mut c = telos::new_client()
         .ca(include_str!("../tests/cert.pem"));
 
     if !args.flag_protocols.is_empty() {

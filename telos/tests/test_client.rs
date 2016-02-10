@@ -1,6 +1,6 @@
-extern crate tls;
+extern crate telos;
 use std::io::{Read, Write};
-use tls::new_client;
+use telos::new_client;
 use std::net::{TcpStream, TcpListener};
 use std::thread;
 use std::time::Duration;
@@ -158,7 +158,7 @@ fn client_handshake_blocks() {
     let cli = thread::spawn(move ||{
         let tcp_stream = TcpStream::connect(addr).unwrap();
         tcp_stream.set_read_timeout(Some(Duration::new(1,0))).unwrap();
-        let mut tls_stream = tls::new_client()
+        let mut tls_stream = telos::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
                 .from_socket(&tcp_stream, "").unwrap();

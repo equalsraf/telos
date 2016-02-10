@@ -6,7 +6,7 @@ KCOV=${PWD}/deps/bin/kcov
 KCOV_ARGS="--coveralls-id=${TRAVIS_JOB_ID} --exclude-pattern=/tests/,/crypto/,/ssl/,/toolchains/ ../kcov-out"
 
 # Somes tests need to be in the crate folder
-pushd tls
+pushd telos
 for f in target/debug/*
 do
 	if [ -f "$f" ] && [ -x "$f" ]; then

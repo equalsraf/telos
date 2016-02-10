@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["raf"]
 license = "ISC"
 description = "FFI bindings for libressl's libtls"
+repository = "https://github.com/equalsraf/telos"
 
 build = "src/build.rs"
 

@@ -4,8 +4,8 @@ set -ev
 # Change SOURCE/DEPLOY_REPO and upload a new key if
 # you want to use this. see travis encrypt-file for
 # encrypting the KEY_FILE
-DEPLOY_REPO="git@github.com:equalsraf/rust-tls-docs.git"
-SOURCE="equalsraf/rust-tls"
+DEPLOY_REPO="git@github.com:equalsraf/telos-docs.git"
+SOURCE="equalsraf/telos"
 
 if [ -z $PUSH_DOCS ]; then
 	echo "Skipping docs (disabled)"
@@ -30,24 +30,24 @@ eval "$(ssh-agent -s)"
 ssh-add $KEY_FILE
 
 # Generate docs
-cargo doc --manifest-path tls/Cargo.toml
+cargo doc --manifest-path telos/Cargo.toml
 
 # Push
 git clone --branch gh-pages "${DEPLOY_REPO}"
-pushd rust-tls-docs
+pushd telos-docs
 if [ ! -d "$TRAVIS_BRANCH" ]; then
 	mkdir $TRAVIS_BRANCH
 fi
 pushd $TRAVIS_BRANCH
 rm -rf *
 
-cp -R ../../tls/target/doc/* .
+cp -R ../../telos/target/doc/* .
 
 # kcov report
 cp -R ../../kcov-out kcov
 
-git config user.name "rust-tls CI"
-git config user.email "rust-tls@travis"
+git config user.name "telos CI"
+git config user.email "telos@travis"
 git config push.default simple
 git add -A .
 git commit -q -m "Build docs/${TRAVIS_BRANCH} from ${TRAVIS_COMMIT}"
