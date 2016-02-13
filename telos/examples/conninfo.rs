@@ -59,7 +59,7 @@ fn main() {
     }
 
     let tcp_stream = TcpStream::connect((&*args.arg_address, args.arg_port)).unwrap();
-    let mut stream = c.from_socket(&tcp_stream, &args.arg_address).unwrap();
+    let mut stream = c.connect(tcp_stream, &args.arg_address).unwrap();
     stream.handshake().unwrap();
 
     println!("Certificate Issuer: {}", stream.certificate_issuer());

@@ -11,7 +11,7 @@
 //! use std::net::TcpStream;
 //! let tcp = TcpStream::connect("google.com:443").unwrap();
 //! let mut client = telos::new_client()
-//!     .from_socket(&tcp, "google.com")
+//!     .connect(tcp, "google.com")
 //!     .unwrap();
 //! client.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
 //! ```
@@ -31,7 +31,7 @@
 //!     .bind().unwrap();
 //! // Accept TCP connection, and then start TLS over it
 //! let tcp_conn = srv.incoming().next().unwrap().unwrap();
-//! let mut tls_conn = tls_srv.accept(&tcp_conn).unwrap();
+//! let mut tls_conn = tls_srv.accept(tcp_conn).unwrap();
 //! ```
 //!
 //! ## Certificate Verification
@@ -43,9 +43,37 @@
 //!
 //! ## Connection Lifetime
 //!
-//! The `from_socket()` and `accept()` methods build new connections on top of
-//! `RawFd`/`RawSocket`. Destroying the TlsStream object WILL NOT cause the underlying
-//! sockets to be closed, you need to close them yourself.
+//! By default `connect()` and `accept()` take ownership of the underlying
+//! sockets, to ensure they are not closed while still in use.
+//!
+//! If you want to keep ownership, `connect_socket()` and `accept_socket()`
+//! allow you to do it. However dropping TlsStream WILL NOT close the underlying
+//! sockets, you need to close them yourself.
+//!
+//! Likewise it is up to the caller to make sure the socket is not closed
+//! too early. This example fails to keep the original TcpStream in scope
+//!
+//! ```should_panic
+//! #[cfg(unix)]
+//! use std::os::unix::io::AsRawFd;
+//! #[cfg(windows)]
+//! use std::os::windows::io::AsRawSocket;
+//! use std::net::TcpStream;
+//! fn create_client() -> telos::TlsStream<()> {
+//!     let tcp = TcpStream::connect("google.com:443").unwrap();
+//!     let mut client = telos::new_client()
+//!         .connect_socket(&tcp, "google.com")
+//!         .unwrap();
+//!     client
+//! }
+//!
+//! fn main() {
+//!     let mut client = create_client();
+//!     // The TcpStream was closed when create_client exited the following
+//!     // will fail with "handshake failed: Bad file descriptor"
+//!     client.handshake().unwrap();
+//! }
+//! ```
 
 extern crate chrono;
 extern crate libc;
@@ -163,23 +191,50 @@ impl ClientBuilder {
     }
 
     #[cfg(unix)]
-    /// Establish a TLS connection over the given socket
-    pub fn from_socket<F: AsRawFd>(self, ifd: &F, servername: &str) -> TlsResult<TlsStream> {
+    /// Establish a TLS connection over an existing file descriptor. Unlike `connect()`
+    /// this does not take ownership, see the main crate docs [for an
+    /// example](index.html#connection-lifetime).
+    pub fn connect_socket<R: AsRawFd>(self, r: &R, servername: &str) -> TlsResult<TlsStream<()>> {
         let mut ctx = try!(self.new_ctx());
-        let fd = ifd.as_raw_fd();
-        try!(ctx.connect_socket(fd, servername));
+        try!(ctx.connect_socket(r.as_raw_fd(), servername));
         Ok(TlsStream {
             ctx: ctx,
+            inner_stream: (),
+        })
+    }
+    /// Connects over an existing stream. See `TlsStream::inner`.
+    #[cfg(unix)]
+    pub fn connect<F: AsRawFd>(self, inner_stream: F, servername: &str) -> TlsResult<TlsStream<F>> {
+        let mut ctx = try!(self.new_ctx());
+        try!(ctx.connect_socket(inner_stream.as_raw_fd(), servername));
+        Ok(TlsStream {
+            ctx: ctx,
+            inner_stream: inner_stream,
         })
     }
 
     #[cfg(windows)]
-    /// Establish a TLS connection over the given socket
-    pub fn from_socket<F: AsRawSocket>(self, isock: &F, servername: &str) -> TlsResult<TlsStream> {
+    /// Establish a TLS connection over an existing socket
+    pub fn connect_socket<R: AsRawSocket>(self, r: &R, servername: &str) -> TlsResult<TlsStream<()>> {
         let mut ctx = try!(self.new_ctx());
-        let sock = isock.as_raw_socket();
+        try!(ctx.connect_socket(r.as_raw_socket(), servername));
+        Ok(TlsStream {
+            ctx: ctx,
+            inner_stream: (),
+        })
+    }
+
+    /// Consumes the socket holder, and keeps it
+    /// until its no longer needed. See `TlsStream::inner`.
+    #[cfg(windows)]
+    pub fn connect<F: AsRawSocket>(self, inner_stream: F, servername: &str) -> TlsResult<TlsStream<F>> {
+        let mut ctx = try!(self.new_ctx());
+        let sock = inner_stream.as_raw_socket();
         try!(ctx.connect_socket(sock, servername));
-        Ok(TlsStream { ctx: ctx })
+        Ok(TlsStream {
+            ctx: ctx,
+            inner_stream: inner_stream,
+        })
     }
 }
 
@@ -208,11 +263,12 @@ pub fn new_client() -> ClientBuilder {
     }
 }
 
-pub struct TlsStream {
+pub struct TlsStream<T> {
     ctx: TlsContext,
+    inner_stream: T,
 }
 
-impl TlsStream {
+impl<T> TlsStream<T> {
     /// Executes the TLS handshake. This function is automatically called when reading or writing,
     /// you usually don't need to call it unless you want to force the handshake to finish sooner.
     ///
@@ -271,9 +327,20 @@ impl TlsStream {
     pub fn cipher(&self) -> String {
         self.ctx.conn_cipher()
     }
+
+    /// Returns a reference to the inner object holding the
+    /// socket.
+    pub fn inner(&self) -> &T {
+        &self.inner_stream
+    }
+    /// If available returns a mutable reference to the inner object
+    /// holding the socket.
+    pub fn inner_mut(&mut self) -> &mut T {
+        &mut self.inner_stream
+    }
 }
 
-impl Read for TlsStream {
+impl<T> Read for TlsStream<T> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.ctx
             .read(buf)
@@ -281,7 +348,7 @@ impl Read for TlsStream {
     }
 }
 
-impl Write for TlsStream {
+impl<T> Write for TlsStream<T> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.ctx
             .write(buf)
@@ -292,7 +359,7 @@ impl Write for TlsStream {
     }
 }
 
-impl Drop for TlsStream {
+impl<T> Drop for TlsStream<T> {
     fn drop(&mut self) {
         let _ = self.ctx.close();
     }
@@ -372,21 +439,45 @@ pub struct TlsServer {
 
 impl TlsServer {
     #[cfg(unix)]
-    /// Start a new TLS connection over an existing socket (server-side)
-    pub fn accept<F: AsRawFd>(&mut self, ifd: &F) -> io::Result<TlsStream> {
-        let fd = ifd.as_raw_fd();
+    /// Start a new TLS connection over an existing file descriptor (server-side)
+    /// Unlike `connect()` this does not take ownership, see the main crate docs [for an
+    /// example](index.html#connection-lifetime).
+
+    pub fn accept_socket<R: AsRawFd>(&mut self, r: &R) -> io::Result<TlsStream<()>> {
+        let c = try!(self.ctx.accept_socket(r.as_raw_fd()));
+        Ok(TlsStream {
+            ctx: c,
+            inner_stream: (),
+        })
+    }
+    #[cfg(unix)]
+    pub fn accept<F: AsRawFd>(&mut self, inner_stream: F) -> io::Result<TlsStream<F>> {
+        let fd = inner_stream.as_raw_fd();
         let c = try!(self.ctx.accept_socket(fd));
         Ok(TlsStream {
             ctx: c,
+            inner_stream: inner_stream,
         })
     }
 
     #[cfg(windows)]
     /// Start a new TLS connection over an existing socket (server-side)
-    pub fn accept<F: AsRawSocket>(&mut self, isock: &F) -> TlsResult<TlsStream> {
-        let sock = isock.as_raw_socket();
+    pub fn accept_socket<R: AsRawSocket>(&mut self, r: &R) -> TlsResult<TlsStream<()>> {
+        let c = try!(self.ctx.accept_socket(r.as_raw_socket()));
+        Ok(TlsStream {
+            ctx: c,
+            inner_stream: (),
+        })
+    }
+
+    #[cfg(windows)]
+    pub fn accept<F: AsRawSocket>(&mut self, inner_stream: F) -> TlsResult<TlsStream<F>> {
+        let sock = inner_stream.as_raw_socket();
         let c = try!(self.ctx.accept_socket(sock));
-        Ok(TlsStream { ctx: c })
+        Ok(TlsStream {
+            ctx: c,
+            inner_stream: inner_stream,
+        })
     }
 }
 

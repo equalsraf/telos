@@ -10,7 +10,7 @@ fn test_client() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut c = new_client()
         .ca_file("tests/cert.pem")
-        .from_socket(&tcp, "google.com").unwrap();
+        .connect(tcp, "google.com").unwrap();
     c.handshake().unwrap();
 
     let notbefore = c.peer_cert_notbefore().unwrap();
@@ -33,7 +33,7 @@ fn stream_write_read() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
 
     cli.write("GET / HTTP/1.1\n\n".as_bytes()).unwrap();
@@ -47,7 +47,7 @@ fn shutdown_twice_fails() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "www.google.com")
+                .connect(tcp, "www.google.com")
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -60,7 +60,7 @@ fn shutdown_without_handshake_fails() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
 
     assert!(cli.shutdown().is_err());
@@ -73,7 +73,7 @@ fn ca_invalid() {
     let cli = new_client()
                 .ca_path(".")
                 .ca_file("")
-                .from_socket(&tcp, "google.com");
+                .connect(tcp, "google.com");
     assert!(cli.is_err());
 }
 
@@ -83,7 +83,7 @@ fn ca_string() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca(&pem)
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -93,7 +93,7 @@ fn ca_string_invalid() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let cli = new_client()
                 .ca("--INVALID PEM")
-                .from_socket(&tcp, "google.com");
+                .connect(tcp, "google.com");
     assert!(cli.is_err());
 }
 
@@ -102,7 +102,7 @@ fn connect_hostport() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -112,7 +112,7 @@ fn connect_socket() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
     cli.handshake().unwrap();
 }
@@ -122,7 +122,7 @@ fn double_handshake_is_error() {
     let tcp = TcpStream::connect("google.com:443").unwrap();
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
 
     cli.handshake().unwrap();
@@ -135,7 +135,7 @@ fn verify_depth() {
     let mut cli = new_client()
                 .ca_file("tests/cert.pem")
                 .verify_depth(0)
-                .from_socket(&tcp, "google.com")
+                .connect(tcp, "google.com")
                 .unwrap();
     assert!(cli.handshake().is_err());
 }
@@ -146,7 +146,7 @@ fn error_ciphers() {
     let cli = new_client()
                 .ca_file("tests/cert.pem")
                 .ciphers("unknown_cipher")
-                .from_socket(&tcp, "google.com");
+                .connect(tcp, "google.com");
     assert!(cli.is_err());
 }
 
@@ -161,7 +161,7 @@ fn client_handshake_blocks() {
         let mut tls_stream = telos::new_client()
                 .insecure_noverifyname()
                 .insecure_noverifycert()
-                .from_socket(&tcp_stream, "").unwrap();
+                .connect(tcp_stream, "").unwrap();
         let res = tls_stream.handshake();
         assert!(res.is_err());
         assert!(res.unwrap_err().wants_more());
@@ -170,4 +170,42 @@ fn client_handshake_blocks() {
     // Accept TCP connection
     let tcp_conn = srv.incoming().next().unwrap().unwrap();
     let _ = cli.join();
+}
+
+#[test]
+fn invalid_file_descriptor() {
+    // This fails, the socket is closed
+    let mut client = {
+        let tcp = TcpStream::connect("google.com:443").unwrap();
+        let mut client = telos::new_client()
+            .insecure_noverifycert()
+            .connect_socket(&tcp, "google.com")
+            .unwrap();
+        client
+    };
+    assert!(client.handshake().is_err());
+
+    let mut client = {
+        let tcp = TcpStream::connect("google.com:443").unwrap();
+        let mut client = telos::new_client()
+            .insecure_noverifycert()
+            .connect(tcp, "google.com")
+            .unwrap();
+        client
+    };
+    client.handshake().unwrap();
+}
+
+#[test]
+fn inner_stream() {
+        use std::net::Shutdown;
+
+        let tcp = TcpStream::connect("google.com:443").unwrap();
+        let mut client = telos::new_client()
+            .insecure_noverifycert()
+            .connect(tcp, "google.com")
+            .unwrap();
+
+        client.inner().shutdown(Shutdown::Both).unwrap();
+        assert!(client.handshake().is_err());
 }
