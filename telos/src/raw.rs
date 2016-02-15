@@ -402,9 +402,7 @@ impl TlsContext {
         let mut cctx: ffi::Tls = ptr::null_mut();;
         // This cast is not exactly safe
         // http://stackoverflow.com/questions/1953639/
-        let rv = unsafe {
-            ffi::tls_accept_socket(self.ptr, &mut cctx, sock as i32)
-        };
+        let rv = unsafe { ffi::tls_accept_socket(self.ptr, &mut cctx, sock as i32) };
         self.rv_to_result(rv as i64)
             .map(|_| {
                 TlsContext {
@@ -454,7 +452,7 @@ fn error_connect_no_host() {
     cfg.set_ca_file("tests/cert.pem").unwrap();
     let mut cli = TlsContext::new_client().unwrap();
     assert!(cli.connect_servername("", "443", "")
-            .is_err());
+               .is_err());
 }
 
 #[test]
@@ -464,5 +462,5 @@ fn error_connect_no_port() {
     cfg.set_ca_file("tests/cert.pem").unwrap();
     let mut cli = TlsContext::new_client().unwrap();
     assert!(cli.connect_servername("www.google.com", "", "")
-            .is_err());
+               .is_err());
 }

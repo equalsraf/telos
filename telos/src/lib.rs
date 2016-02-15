@@ -215,7 +215,10 @@ impl ClientBuilder {
 
     #[cfg(windows)]
     /// Establish a TLS connection over an existing socket
-    pub fn connect_socket<R: AsRawSocket>(self, r: &R, servername: &str) -> TlsResult<TlsStream<()>> {
+    pub fn connect_socket<R: AsRawSocket>(self,
+                                          r: &R,
+                                          servername: &str)
+                                          -> TlsResult<TlsStream<()>> {
         let mut ctx = try!(self.new_ctx());
         try!(ctx.connect_socket(r.as_raw_socket(), servername));
         Ok(TlsStream {
@@ -227,7 +230,10 @@ impl ClientBuilder {
     /// Consumes the socket holder, and keeps it
     /// until its no longer needed. See `TlsStream::inner`.
     #[cfg(windows)]
-    pub fn connect<F: AsRawSocket>(self, inner_stream: F, servername: &str) -> TlsResult<TlsStream<F>> {
+    pub fn connect<F: AsRawSocket>(self,
+                                   inner_stream: F,
+                                   servername: &str)
+                                   -> TlsResult<TlsStream<F>> {
         let mut ctx = try!(self.new_ctx());
         let sock = inner_stream.as_raw_socket();
         try!(ctx.connect_socket(sock, servername));
@@ -244,7 +250,7 @@ pub fn new_client() -> ClientBuilder {
         return ClientBuilder {
             cfg: None,
             error: Some(TlsError::new("Failed to initialize libtls")),
-        }
+        };
     }
 
     match TlsConfig::new() {
@@ -413,7 +419,7 @@ pub fn new_server() -> ServerBuilder {
         return ServerBuilder {
             cfg: None,
             error: Some(TlsError::new("Failed to initialize libtls")),
-        }
+        };
     }
 
     match TlsConfig::new() {
