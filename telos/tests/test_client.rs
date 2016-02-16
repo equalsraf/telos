@@ -1,5 +1,6 @@
 extern crate telos;
 use std::io::{Read, Write};
+use std::io;
 use telos::new_client;
 use std::net::{TcpStream, TcpListener};
 use std::thread;
@@ -208,4 +209,18 @@ fn inner_stream() {
 
         client.inner().shutdown(Shutdown::Both).unwrap();
         assert!(client.handshake().is_err());
+}
+
+#[test]
+fn timeout() {
+    let tcp = TcpStream::connect("google.com:443").unwrap();
+    let mut client = telos::new_client()
+        .insecure_noverifycert()
+        .connect(tcp, "google.com")
+        .unwrap();
+
+    let mut data: Vec<u8> = Vec::new();
+    client.inner().set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    let err = client.read_to_end(&mut data).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::WouldBlock);
 }
