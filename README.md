@@ -26,5 +26,5 @@ To force static linking
 ## Status
 
 [![Travis-CI](https://travis-ci.org/equalsraf/telos.svg?branch=master)](https://travis-ci.org/equalsraf/telos)
-[![Appveyor](https://ci.appveyor.com/api/projects/status/w39rj54ub3iu88xs/branch/master?svg=true)](https://ci.appveyor.com/project/equalsraf/telos/branch/master)
+[![Appveyor](https://ci.appveyor.com/api/projects/status/2vsds0x871hnws17?svg=true)](https://ci.appveyor.com/project/equalsraf/telos/branch/master)
 [![Coverage Status](https://coveralls.io/repos/equalsraf/telos/badge.svg?branch=master&service=github)](https://coveralls.io/github/equalsraf/telos?branch=master)
