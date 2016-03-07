@@ -11,6 +11,14 @@ fn test_client() {
     let mut c = new_client()
         .ca_file("tests/cert.pem")
         .connect(tcp, "google.com").unwrap();
+
+    // Defaults before the handshake
+    assert!(c.certificate_issuer().is_empty());
+    assert!(c.certificate_hash().is_empty());
+    assert!(c.certificate_subject().is_empty());
+    assert!(c.version().is_empty());
+    assert!(c.cipher().is_empty());
+
     c.handshake().unwrap();
 
     let notbefore = c.peer_cert_notbefore().unwrap();
@@ -25,6 +33,13 @@ fn test_client() {
     c.read(&mut buf).unwrap();
     println!("{}", String::from_utf8_lossy(&buf));
     assert!(buf.starts_with(b"HTTP/1.1 "));
+
+    // After the handshake
+    assert!(!c.certificate_issuer().is_empty());
+    assert!(!c.certificate_hash().is_empty());
+    assert!(!c.certificate_subject().is_empty());
+    assert!(!c.version().is_empty());
+    assert!(!c.cipher().is_empty());
 }
 
 
