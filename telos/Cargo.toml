@@ -1,9 +1,10 @@
 [package]
 name = "telos"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["equalsraf"]
 description = "Rust bindings for libressl's libtls"
 repository = "https://github.com/equalsraf/telos"
+documentation = "https://equalsraf.github.io/telos-docs/v0.2.1/telos/"
 license = "ISC"
 
 [dependencies]
